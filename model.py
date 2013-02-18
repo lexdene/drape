@@ -51,6 +51,8 @@ class LinkedModel(object):
 		return self
 		
 	def join(self,jointable,alias=None,on=None,jointype='left'):
+		if alias is None:
+			alias = jointable
 		self.__appendLinkedData(
 			'join',
 			dict(
@@ -178,6 +180,9 @@ class LinkedModel(object):
 	def __clearLinkedData(self):
 		self.__linkedData = dict()
 		
+		# default alias
+		self.alias(self.__tableName)
+		
 	def __getTableNameList(self):
 		tableNameList = list()
 		tableNameList.append( self.__tableName )
@@ -194,7 +199,10 @@ class LinkedModel(object):
 			self.__cache['showColumns'] = dict()
 		
 		if not tableName in self.__cache['showColumns']:
-			aIter = self.__db.query("SHOW COLUMNS FROM `%s`"%tableName)
+			aIter = self.__db.query("SHOW COLUMNS FROM `%s%s`"%(
+				self.__db.tablePrefix(),
+				tableName
+			))
 			columnList = list()
 		
 			for i in aIter:
@@ -207,18 +215,12 @@ class LinkedModel(object):
 	def __getTableAliasList(self):
 		tableAliasList = list()
 		aliasData = self.__getLinkedData('alias')
-		if aliasData:
-			tableAliasList.append( (self.__tableName , aliasData) )
-		else:
-			tableAliasList.append( (self.__tableName , self.__tableName) )
+		tableAliasList.append( (self.__tableName , aliasData) )
 		
 		joinData = self.__getLinkedData('join')
 		if joinData:
 			for join in joinData:
-				if join['alias']:
-					tableAliasList.append( (join['jointable'] , join['alias'] ) )
-				else:
-					tableAliasList.append( (join['jointable'] , join['jointable'] ) )
+				tableAliasList.append( (join['jointable'] , join['alias'] ) )
 				
 		return tableAliasList
 		
