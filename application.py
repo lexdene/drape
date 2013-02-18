@@ -47,7 +47,6 @@ class Application(object):
 		self.__session = None
 		self.__cookie = cookie.Cookie(self)
 		self.__db = None
-		self.__logFile = None
 		
 		g = controller.Controller.globalVars()
 		g.clear()
@@ -57,8 +56,7 @@ class Application(object):
 		请求级清理函数，
 		这函数在每次请求结束的时候都会执行一次
 		'''
-		if not self.__logFile is None:
-			self.__logFile.close()
+		pass
 		
 	def start(self):
 		self.run()
@@ -136,20 +134,28 @@ class Application(object):
 		pass
 		
 	def log(self,type,data):
-		if self.__logFile is None:
+		if not hasattr(self,'__log'):
+			import logging
+			self.__log = logging
 			dirpath = 'data/log'
 			if not os.path.isdir(dirpath):
 				os.makedirs(dirpath)
 			filepath = dirpath + '/%s.log'%time.strftime('%Y-%m-%d',time.localtime())
-			self.__logFile = open( filepath ,'a')
-		
-		self.__logFile.write(
-			'[%s] [%s] %s\n'%(
-				util.timeStamp2Str( time.time() ),
-				type,
-				str(data)
+			logging.basicConfig(
+				filename = filepath,
+				level = logging.DEBUG,
+				format = '[%(asctime)s] [%(levelname)s] %(message)s'
 			)
-		)
+		if 'debug' == type:
+			logging.debug(data)
+		elif 'info' == type:
+			logging.info(data)
+		elif 'warning' == type:
+			logging.warning(data)
+		elif 'error' == type:
+			logging.error(data)
+		elif 'critical' == type:
+			logging.critical(data)
 
 class WsgiApplication(Application):
 	def __init__(self):
