@@ -127,8 +127,9 @@ class LinkedModel(object):
 			valueList.append('%%(%s)s'%column)
 			params[column] = value
 		
+		tableString = self.__db.tablePrefix() + self.__tableName
 		queryString = "insert into %(table)s (%(columns)s) values(%(values)s)"%{
-			'table' : self.__tableName,
+			'table' : tableString,
 			'columns' : ','.join(columnList),
 			'values' : ','.join(valueList)
 		}
@@ -146,8 +147,9 @@ class LinkedModel(object):
 			self.__appendLinkedData('params',(k,v))
 		dataString = ' ,'.join(dataStringPartedList)
 		
+		tableString = self.__db.tablePrefix() + self.__tableName
 		queryString = "update %(table)s set %(data)s where %(where)s"%dict(
-			table = self.__tableName,
+			table = tableString,
 			data = dataString,
 			where = self.__buildWhereString()
 		)
