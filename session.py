@@ -80,6 +80,9 @@ class FileStore(StoreBase):
 		directory = self.config()['file_directory']
 		timeout = self.config()['timeout']
 		now = time.time()
+		
+		if not os.path.isdir(directory):
+			return
 		for f in os.listdir(directory):
 			path = os.path.join(directory,f)
 			atime = os.stat(path).st_atime
