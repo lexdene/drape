@@ -18,6 +18,9 @@ def deepmerge(target,source):
 					target[k] = source[k]
 			else:
 				target[k] = source[k]
+	for k in source:
+		if not k in target:
+			target[k] = source[k]
 
 def md5sum(s):
 	m = hashlib.md5()
