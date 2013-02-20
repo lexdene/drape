@@ -164,9 +164,10 @@ class NestingController(ViewController):
 		g['res'].append(myres)
 		self.setVariable('res',myres)
 		
-	def addResByPath(self,type='both'):
-		# remove prefix /
-		path = self.path()
+	def addResByPath(self,type='both',path=None):
+		# path
+		if path is None:
+			path = self.path()
 		
 		res = self.variable('res')
 		
