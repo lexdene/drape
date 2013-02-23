@@ -1,0 +1,24 @@
+def jinja2(templatePath,vardict):
+	template_filepath = '%s.html'%templatePath
+	import jinja2
+	env = jinja2.Environment(loader = jinja2.FileSystemLoader('app/template'))
+	template = env.get_template(template_filepath)
+	
+	def do(a):
+		return ''
+	vardict['do'] = do
+	return template.render(**vardict)
+
+def mako(templatePath,vardict):
+	template_folder = 'app/template'
+	template_filepath = '%s.html'%templatePath
+	from mako.template import Template
+	from mako.lookup import TemplateLookup
+	mylookup = TemplateLookup(
+		directories=[ template_folder ],
+		input_encoding='utf-8',
+		output_encoding='utf-8',
+		encoding_errors='replace'
+	)
+	mytemplate = mylookup.get_template( template_filepath )
+	return mytemplate.render_unicode(**vardict)

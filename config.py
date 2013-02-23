@@ -19,7 +19,7 @@ config={
 		'secret_key': util.md5sum('drape_web_framework'),
 	},
 	'view' : {
-		'template_type' : 'jinja2',
+		'render_func' : 'drape.render.jinja2',
 	},
 	'sae_storage' : dict(
 		domain_name = 'storage'

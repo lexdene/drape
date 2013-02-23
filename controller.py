@@ -1,4 +1,4 @@
-import view
+import config
 import application
 import json
 import exceptions
@@ -94,6 +94,7 @@ class ViewController(Controller):
 		if templatePath is None:
 			templatePath = path
 		self.__templatePath = templatePath
+		self.__render_func = None
 		
 		aRequest = application.Application.singleton().request()
 		self.setVariable('ROOT',aRequest.rootPath())
@@ -106,10 +107,20 @@ class ViewController(Controller):
 	def templatePath(self):
 		return self.__templatePath
 		
+	def setRenderFunc(self,render_func):
+		self.__render_func = render_func
+		
 	def render(self):
-		aView = view.View(self.__templatePath)
-		r = aView.render(self.getVardict())
-		return r
+		if self.__render_func is None:
+			render_func = config.config['view']['render_func']
+		else:
+			render_func = self.__render_func
+		x = render_func.split('.')
+		mod = '.'.join(x[0:-1])
+		func = x[-1]
+		mod = __import__(mod, globals(), locals(), [""])
+		func = getattr(mod, func)
+		return func(self.__templatePath,self.getVardict())
 		
 	def setTitle(self,t):
 		g = self.globalVars()
