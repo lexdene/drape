@@ -6,4 +6,4 @@ def debug(data):
 
 def sql(data):
 	a = application.Application.singleton()
-	a.log('debug','[sql] '+data)
+	a.log('debug','[sql] '+str(data))

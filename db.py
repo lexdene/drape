@@ -33,11 +33,15 @@ class Db(object):
 		
 	def query(self,sql,params=None):
 		cursor=self.__conn.cursor(self.__driver.cursors.DictCursor)
+		import debug
+		debug.sql(sql)
 		n=cursor.execute(sql,params)
 		return cursor.fetchall()
 		
 	def execute(self,sql,params=None):
 		cursor=self.__conn.cursor()
+		import debug
+		debug.sql(sql)
 		n = cursor.execute(sql,params)
 		return n
 		

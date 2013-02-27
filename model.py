@@ -34,12 +34,13 @@ class LinkedModel(object):
 		self.__setLinkedData('alias',a)
 		return self
 		
-	def where(self,w):
-		if isinstance(w,basestring):
-			self.__appendLinkedData('where',w)
-		elif isinstance(w,dict):
-			for i,v in w.iteritems():
-				self.__appendLinkedData('where',(i,v))
+	def where(self,data = None,**w):
+		if data is None:
+			data = w
+		else:
+			data.update(w)
+		for i,v in data.iteritems():
+			self.__appendLinkedData('where',(i,v))
 		return self
 		
 	def order(self,w):
@@ -118,7 +119,7 @@ class LinkedModel(object):
 		aIter = self.__db.query(queryString,dict(paramsData))
 		return aIter[0]['count(*)']
 		
-	def insert(self,data):
+	def insert(self,**data):
 		columnList = list()
 		valueList = list()
 		params = dict()
@@ -139,7 +140,7 @@ class LinkedModel(object):
 		self.__db.commit()
 		return insert_id
 		
-	def update(self,data):
+	def update(self,**data):
 		dataString = ''
 		dataStringPartedList = list()
 		for k,v in data.iteritems():
