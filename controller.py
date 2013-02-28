@@ -28,20 +28,18 @@ class InControllerRedirect(ControllerError):
 
 class Controller(object):
 	__globalVars = dict()
-	def __init__(self,path):
+	def __init__(self,path,templatePath=None):
 		self.__path = path
 		self.__vars = dict()
 		self.__ctrlParams = None
 		
-	def run(self):
-		self.process()
-		return self.render()
+		if templatePath is None:
+			templatePath = path
+		self.__templatePath = templatePath
+		self.__render_func = None
 		
-	def process(self):
-		pass
-		
-	def render(self):
-		return ''
+		self.__children = dict()
+		self.__parent = None
 		
 	def setVariable(self,name,value):
 		self.__vars[name] = value
@@ -58,6 +56,67 @@ class Controller(object):
 		
 	def path(self):
 		return self.__path
+		
+	def setTemplatePath(self,templatePath):
+		self.__templatePath = templatePath
+		
+	def templatePath(self):
+		return self.__templatePath
+		
+	def setRenderFunc(self,render_func):
+		self.__render_func = render_func
+		
+	def addChild(self,name,aChildCtrl):
+		self.__children[name] = aChildCtrl
+		aChildCtrl.setParent(self)
+		
+	def setParent(self,parent):
+		if isinstance(parent,str):
+			parent = getControllerByPath(parent)
+		self.__parent = parent
+		
+	def children(self):
+		return self.__children.iteritems()
+		
+	def run(self):
+		for name,aCtrl in self.children():
+			self.setVariable(name,aCtrl.render())
+		
+		try:
+			self.process()
+			self.postProcess()
+		except InControllerRedirect as e:
+			path = e.path
+			c = getControllerByPath(path)
+			c.setCtrlParams(e.argv)
+			return c.run()
+		
+		if not self.__parent is None:
+			self.__parent.addChild('body',self)
+			return self.__parent.run()
+		
+		return self.render()
+		
+	def postProcess(self):
+		pass
+		
+	def process(self):
+		pass
+		
+	def render(self):
+		if self.__render_func is None:
+			render_func = config.config['view']['render_func']
+		else:
+			render_func = self.__render_func
+		x = render_func.split('.')
+		mod = '.'.join(x[0:-1])
+		func = x[-1]
+		mod = __import__(mod, globals(), locals(), [""])
+		func = getattr(mod, func)
+		return func(self.__templatePath,self.getVardict())
+		
+	def icRedirect(self,path,*argv):
+		raise InControllerRedirect(path,argv)
 		
 	def params(self):
 		aRequest = application.Application.singleton().request()
@@ -88,108 +147,7 @@ class Controller(object):
 	def ctrlParams(self):
 		return self.__ctrlParams
 
-class ViewController(Controller):
-	def __init__(self,path,templatePath=None):
-		super(ViewController,self).__init__(path)
-		if templatePath is None:
-			templatePath = path
-		self.__templatePath = templatePath
-		self.__render_func = None
-		
-		aRequest = application.Application.singleton().request()
-		self.setVariable('ROOT',aRequest.rootPath())
-		
-		self.setVariable('ctrl',self)
-	
-	def setTemplatePath(self,templatePath):
-		self.__templatePath = templatePath
-		
-	def templatePath(self):
-		return self.__templatePath
-		
-	def setRenderFunc(self,render_func):
-		self.__render_func = render_func
-		
-	def render(self):
-		if self.__render_func is None:
-			render_func = config.config['view']['render_func']
-		else:
-			render_func = self.__render_func
-		x = render_func.split('.')
-		mod = '.'.join(x[0:-1])
-		func = x[-1]
-		mod = __import__(mod, globals(), locals(), [""])
-		func = getattr(mod, func)
-		return func(self.__templatePath,self.getVardict())
-		
-	def setTitle(self,t):
-		g = self.globalVars()
-		g['title'] = t
-		
-	def title(self):
-		g = self.globalVars()
-		return g['title']
-		
-class NestingController(ViewController):
-	def __init__(self,path):
-		super(NestingController,self).__init__(path)
-		self.__children = dict()
-		self.__parent = None
-		
-	def addChild(self,name,aChildCtrl):
-		self.__children[name] = aChildCtrl
-		aChildCtrl.setParent(self)
-		
-	def setParent(self,parent):
-		if isinstance(parent,str):
-			parent = getControllerByPath(parent)
-		self.__parent = parent
-		
-	def children(self):
-		return self.__children.iteritems()
-		
-	def run(self):
-		for name,aCtrl in self.children():
-			self.setVariable(name,aCtrl.render())
-		
-		try:
-			self.process()
-		except InControllerRedirect as e:
-			path = e.path
-			c = getControllerByPath(path)
-			c.setCtrlParams(e.argv)
-			return c.run()
-		
-		if not self.__parent is None:
-			self.__parent.addChild('body',self)
-			return self.__parent.run()
-		
-		return self.render()
-		
-	def initRes(self):
-		g = self.globalVars()
-		if 'res' not in g:
-			g['res'] = list()
-		
-		myres = list()
-		g['res'].append(myres)
-		self.setVariable('res',myres)
-		
-	def addResByPath(self,type='both',path=None):
-		# path
-		if path is None:
-			path = self.path()
-		
-		res = self.variable('res')
-		
-		if type in ['both','css']:
-			res.append(('css%s'%path,'css'))
-		if type in ['both','js']:
-			res.append(('js%s'%path,'js'))
-		
-	def icRedirect(self,path,*argv):
-		raise InControllerRedirect(path,argv)
-
 class jsonController(Controller):
-	def render(self):
-		return json.dumps(self.getVardict())
+	def __init__(self,path):
+		super(jsonController,self).__init__(path)
+		self.setRenderFunc('drape.render.json')

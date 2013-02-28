@@ -22,3 +22,7 @@ def mako(templatePath,vardict):
 	)
 	mytemplate = mylookup.get_template( template_filepath )
 	return mytemplate.render_unicode(**vardict)
+
+def json(templatePath,vardict):
+	import json
+	return json.dumps(vardict)
