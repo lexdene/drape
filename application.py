@@ -75,6 +75,7 @@ class Application(object):
 			self.__cookie.run()
 			
 			self.response().addHeader('Content-Type','text/html; charset=utf-8')
+			self.response().addHeader('X-Powered-By','python-drape')
 			
 			path = self.__request.controllerPath()
 			
