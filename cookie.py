@@ -7,7 +7,7 @@ class Cookie(object):
 		self.__addCookies = list()
 	
 	def run(self):
-		cookiestr = self.__application.request().cookie()
+		cookiestr = self.__application.request().HTTP_COOKIE
 		if not cookiestr is None:
 			partList = cookiestr.split(';')
 			for part in partList:

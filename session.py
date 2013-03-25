@@ -152,22 +152,22 @@ class Session(object):
 			
 			# validate address
 			# check expired time
-			if aRequest.remoteAddress() != self.get('_remote_address') \
+			if aRequest.REMOTE_ADDR != self.get('_remote_address') \
 					or time.time() > self.get('_expired'):
 				self.__initData(
-					aRequest.remoteAddress(),
+					aRequest.REMOTE_ADDR,
 					config.config['session']['timeout']
 				)
 			
 		# recreate session_id
 		if self.__session_id is None:
 			self.__session_id = self.__recreate_session_id(
-				aRequest.remoteAddress(),
+				aRequest.REMOTE_ADDR,
 				config.config['session']['secret_key']
 			)
 			aCookie.add(cookie_name,self.__session_id)
 			self.__initData(
-				aRequest.remoteAddress(),
+				aRequest.REMOTE_ADDR,
 				config.config['session']['timeout']
 			)
 		

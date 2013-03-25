@@ -1,25 +1,30 @@
+import cgi
+
 class Request(object):
 	def __init__(self):
 		self.__controllerPath = None
 		
-	def run(self,params,env):
+	def run(self,env):
+		self.__env = env
+		
 		# url path
-		self.__urlPath = params.get('path')
+		path = env.get('PATH_INFO')
+		self.__urlPath = path
 		qs = env.get('QUERY_STRING')
 		if not qs is None and len(qs) > 0 :
 			self.__urlPath += '?'+qs
 		
 		# controller path
-		x = params.get('path').split('/')
-		if len(x) > 1 and x[1] != '':
-			mod = x[1]
-		else:
-			mod = 'index'
+		# x must be shorter than 20
+		x = path.split('/')[1:21]
 		
-		if len(x) > 2 and x[2] != '':
-			cls = x[2]
-		else:
-			cls = 'Index'
+		def list_get(l,index,defaultValue):
+			if len(l) > index and l[index] != '':
+				return l[index]
+			else:
+				return defaultValue
+		mod = list_get(x,0,'index')
+		cls = list_get(x,1,'Index')
 		
 		self.__controllerPath = '/%s/%s'%(mod,cls)
 		
@@ -28,18 +33,19 @@ class Request(object):
 		self.__fileDict = dict()
 		
 		# path params
-		i = 3
-		while i+1 < len(x):
+		for i in range(2,len(x)-1,2):
 			key = x[i]
 			value = x[i+1]
 			self.__paramDict[ key ] = value
-			i = i+2
 		
 		# field storage
-		form = params.get('field_storage')
-		self.__field_storage = form
-		for key in form:
-			value = form[key]
+		self.__field_storage = cgi.FieldStorage(
+			fp=env['wsgi.input'],
+			environ=env,
+			keep_blank_values=True
+		)
+		for key in self.__field_storage:
+			value = self.__field_storage[key]
 			# get last in list
 			if isinstance(value,list):
 				value = value[-1]
@@ -49,10 +55,11 @@ class Request(object):
 			else:
 				self.__fileDict[key] = value
 		
-		self.__root_path = params.get('root_path')
-		self.__cookie = params.get('cookie')
-		self.__remote_address = params.get('remote_address')
-		self.__request_uri = env.get('REQUEST_URI')
+	def __getattr__(self,key):
+		return self.__env.get(key,None)
+		
+	def rootPath(self):
+		return self.SCRIPT_NAME
 		
 	def urlPath(self):
 		return self.__urlPath
@@ -60,23 +67,5 @@ class Request(object):
 	def controllerPath(self):
 		return self.__controllerPath
 		
-	def rootPath(self):
-		return self.__root_path
-		
-	def requestUri(self):
-		return self.__request_uri
-		
-	def remoteAddress(self):
-		return self.__remote_address
-		
 	def params(self):
 		return self.__paramDict
-		
-	def files(self):
-		return self.__fileDict
-		
-	def fieldStorage(self):
-		return self.__field_storage
-		
-	def cookie(self):
-		return self.__cookie

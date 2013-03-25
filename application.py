@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 # system import
-import os,sys,cgi,traceback,time
+import os,sys,traceback,time
 
 # drape import
 import controller,db,config,debug,util
@@ -61,35 +61,41 @@ class Application(object):
 	def start(self):
 		self.run()
 		
-	def run(self,environ,params):
+	def run(self,environ):
 		try:
 			self.requestInit()
 			
-			self.__request.run(params,environ)
+			# read request params
+			self.__request.run(environ)
 			
-			debug.debug(self.__request.requestUri())
-			if self.__request.requestUri() == self.__request.rootPath():
+			# redirect path without postfix '/'
+			if self.__request.REQUEST_URI == self.__request.rootPath():
 				self.__response.setStatus('301 Moved Permanently')
 				self.response().addHeader('Location',self.__request.rootPath() + '/' )
 				return
+			
+			# init cookie
 			self.__cookie.run()
 			
+			# base header
 			self.response().addHeader('Content-Type','text/html; charset=utf-8')
 			self.response().addHeader('X-Powered-By','python-drape')
-			
+				
+			# init controller
 			path = self.__request.controllerPath()
-			
 			controllerCls = controller.getControllerClsByPath(path)
 			if controllerCls is None:
 				controllerCls = NotFound
-				
 			c = controllerCls(path)
 			
+			# response
 			self.__response.setBody(c.run())
 			
+			# session
 			if not self.__session is None:
 				self.__session.save()
 				
+			# response cookie
 			self.__cookie.addToHeader(self.__response)
 		except Exception as e:
 			self.__response.addHeader('Content-Type','text/plain')
@@ -98,9 +104,8 @@ class Application(object):
 			body += 'controllerPath:%s\n'%self.__request.controllerPath()
 			body += traceback.format_exc()
 			body += "environ:\n"
-			env = environ
-			for i in env:
-				body += "%s => %s\n"%(i,env[i])
+			for k,v in environ.iteritems():
+				body += "%s => %s\n"%(k,v)
 			
 			self.__response.setBody(body)
 			self.__response.setStatus('500 Internal Server Error')
@@ -171,18 +176,18 @@ class WsgiApplication(Application):
 		return
 		
 	def __call__(self,environ, start_response):
-		params = dict(
-			path = environ['PATH_INFO'],
-			root_path = environ['SCRIPT_NAME'],
-			cookie = environ.get('HTTP_COOKIE'),
-			remote_address = environ['REMOTE_ADDR'],
-			field_storage = cgi.FieldStorage(
-				fp=environ['wsgi.input'],
-				environ=environ,
-				keep_blank_values=True
-			)
-		)
-		self.run(environ,params)
+#		params = dict(
+#			path = environ['PATH_INFO'],
+#			root_path = environ['SCRIPT_NAME'],
+#			cookie = environ.get('HTTP_COOKIE'),
+#			remote_address = environ['REMOTE_ADDR'],
+#			field_storage = cgi.FieldStorage(
+#				fp=environ['wsgi.input'],
+#				environ=environ,
+#				keep_blank_values=True
+#			)
+#		)
+		self.run(environ)
 		
 		ret = self.response().body()
 		if isinstance(ret, unicode):
