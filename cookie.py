@@ -4,7 +4,6 @@ class Cookie(object):
 	def __init__(self,application):
 		self.__application = application
 		self.__requestdata = dict()
-		self.__addCookies = list()
 	
 	def run(self):
 		cookiestr = self.__application.request().HTTP_COOKIE
@@ -38,23 +37,22 @@ class Cookie(object):
 			else:
 				expires = float(expires)
 		
-		self.__addCookies.append(dict(
+		self.__addToHeader(self.__application.response(),dict(
 			key = key,
 			value = value,
 			path = path,
 			expires = expires
 		))
 		
-	def addToHeader(self,response):
-		for cookiedata in self.__addCookies:
-			if cookiedata['expires'] is None:
-				s = '%(key)s=%(value)s; Path=%(path)s'%cookiedata
-			else:
-				GMT_FORMAT = '%a, %d %b %Y %H:%M:%S GMT'
-				time_struct = time.gmtime(cookiedata['expires'])
-				cookiedata['expires'] = time.strftime(GMT_FORMAT,time_struct)
-				s = '%(key)s=%(value)s; Path=%(path)s; Expires=%(expires)s'%cookiedata
-			response.addHeader(
-				'Set-Cookie',
-				s,
-			)
+	def __addToHeader(self,response,cookiedata):
+		if cookiedata['expires'] is None:
+			s = '%(key)s=%(value)s; Path=%(path)s'%cookiedata
+		else:
+			GMT_FORMAT = '%a, %d %b %Y %H:%M:%S GMT'
+			time_struct = time.gmtime(cookiedata['expires'])
+			cookiedata['expires'] = time.strftime(GMT_FORMAT,time_struct)
+			s = '%(key)s=%(value)s; Path=%(path)s; Expires=%(expires)s'%cookiedata
+		response.addHeader(
+			'Set-Cookie',
+			s,
+		)

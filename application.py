@@ -94,9 +94,6 @@ class Application(object):
 			# session
 			if not self.__session is None:
 				self.__session.save()
-				
-			# response cookie
-			self.__cookie.addToHeader(self.__response)
 		except Exception as e:
 			self.__response.addHeader('Content-Type','text/plain')
 			
