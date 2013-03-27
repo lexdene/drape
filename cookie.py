@@ -24,7 +24,7 @@ class Cookie(object):
 	def iteritems(self):
 		return self.__requestdata.iteritems()
 		
-	def add(self,key,value,path='/',expires=None):
+	def add(self,key,value,path='/',expires=None,domain=None):
 		# path can be string or tuple
 		if isinstance(path,tuple):
 			path,path_type = path
@@ -51,17 +51,22 @@ class Cookie(object):
 			key = key,
 			value = value,
 			path = path,
-			expires = expires
+			expires = expires,
+			domain = domain
 		))
 		
 	def __addToHeader(self,response,cookiedata):
-		if cookiedata['expires'] is None:
-			s = '%(key)s=%(value)s; Path=%(path)s'%cookiedata
-		else:
+		s = '%(key)s=%(value)s; Path=%(path)s'%cookiedata
+		
+		if not cookiedata['expires'] is None:
 			GMT_FORMAT = '%a, %d %b %Y %H:%M:%S GMT'
 			time_struct = time.gmtime(cookiedata['expires'])
 			cookiedata['expires'] = time.strftime(GMT_FORMAT,time_struct)
-			s = '%(key)s=%(value)s; Path=%(path)s; Expires=%(expires)s'%cookiedata
+			s += '; Expires=%(expires)s'%cookiedata
+		
+		if not cookiedata['domain'] is None:
+			s += '; Domain=%(domain)s'%cookiedata
+		
 		response.addHeader(
 			'Set-Cookie',
 			s,
