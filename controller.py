@@ -8,8 +8,18 @@ def getControllerClsByPath(path):
 	mod = x[1]
 	cls = x[2]
 	mod = 'app.controller.%s'%mod
-	mod = __import__(mod, globals(), locals(), [""])
-	cls = getattr(mod, cls)
+	
+	# import module
+	try:
+		mod = __import__(mod, globals(), locals(), [""])
+	except ImportError:
+		return None
+	
+	# get class
+	if hasattr(mod,cls):
+		cls = getattr(mod, cls)
+	else:
+		cls = None
 	
 	return cls
 

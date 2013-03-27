@@ -3,6 +3,7 @@ import util
 config={
 	'system' : {
 		'debug' : 'debug' ,
+		'notfound' : '/notfound/Index'
 	},
 	'db' : {
 		'driver' : 'mysql' ,

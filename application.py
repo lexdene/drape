@@ -80,12 +80,20 @@ class Application(object):
 			# base header
 			self.response().addHeader('Content-Type','text/html; charset=utf-8')
 			self.response().addHeader('X-Powered-By','python-drape')
-				
+			
 			# init controller
 			path = self.__request.controllerPath()
 			controllerCls = controller.getControllerClsByPath(path)
 			if controllerCls is None:
-				controllerCls = NotFound
+				# notfound
+				self.__response.setStatus('404 Not Found')
+				
+				path = config.config['system']['notfound']
+				controllerCls = controller.getControllerClsByPath(path)
+				if controllerCls is None:
+					self.__response.addHeader('Content-Type','text/plain; charset=utf-8')
+					self.__response.setBody('404 Not Found')
+					return
 			c = controllerCls(path)
 			
 			# response
