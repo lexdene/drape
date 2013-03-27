@@ -24,8 +24,18 @@ class Cookie(object):
 	def iteritems(self):
 		return self.__requestdata.iteritems()
 		
-	def add(self,key,value,path='/',expires=None,
-			path_type='relative',expires_type='relative'):
+	def add(self,key,value,path='/',expires=None):
+		# path can be string or tuple
+		if isinstance(path,tuple):
+			path,path_type = path
+		else:
+			path_type='relative'
+		
+		# expires can be string or tuple
+		if isinstance(expires,tuple):
+			expires,expires_type = expires
+		else:
+			expires_type='relative'
 		
 		if 'relative' == path_type:
 			rootPath = self.__application.request().rootPath()
