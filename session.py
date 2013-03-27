@@ -6,7 +6,8 @@ class ConfigError(exceptions.StandardError):
 
 class StoreBase(object):
 	@classmethod
-	def create(cls,store_type,session_config):
+	def create(cls,session_config):
+		store_type = session_config['store_type']
 		store_cls = None
 		if 'file' == store_type:
 			store_cls = FileStore
@@ -127,10 +128,7 @@ class Session(object):
 		cookie_name = config.config['session']['cookie_name']
 		aCookie = self.__application.cookie()
 		aRequest = self.__application.request()
-		self.__store = StoreBase.create(
-			store_type = config.config['session']['store_type'],
-			session_config = config.config['session']
-		)
+		self.__store = StoreBase.create(config.config['session'])
 		
 		# read session id from cookie
 		self.__session_id = aCookie.get(cookie_name)
