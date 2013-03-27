@@ -95,14 +95,17 @@ class Application(object):
 			if not self.__session is None:
 				self.__session.save()
 		except Exception as e:
-			self.__response.addHeader('Content-Type','text/plain')
+			self.__response.addHeader('Content-Type','text/plain; charset=utf-8')
 			
 			body = ''
-			body += 'controllerPath:%s\n'%self.__request.controllerPath()
-			body += traceback.format_exc()
-			body += "environ:\n"
-			for k,v in environ.iteritems():
-				body += "%s => %s\n"%(k,v)
+			if 'debug' == config.config['system']['debug']:
+				body += 'controllerPath:%s\n'%self.__request.controllerPath()
+				body += traceback.format_exc()
+				body += "environ:\n"
+				for k,v in environ.iteritems():
+					body += "%s => %s\n"%(k,v)
+			else:
+				body = '500 Internal Server Error\n'
 			
 			self.__response.setBody(body)
 			self.__response.setStatus('500 Internal Server Error')
@@ -173,17 +176,6 @@ class WsgiApplication(Application):
 		return
 		
 	def __call__(self,environ, start_response):
-#		params = dict(
-#			path = environ['PATH_INFO'],
-#			root_path = environ['SCRIPT_NAME'],
-#			cookie = environ.get('HTTP_COOKIE'),
-#			remote_address = environ['REMOTE_ADDR'],
-#			field_storage = cgi.FieldStorage(
-#				fp=environ['wsgi.input'],
-#				environ=environ,
-#				keep_blank_values=True
-#			)
-#		)
 		self.run(environ)
 		
 		ret = self.response().body()

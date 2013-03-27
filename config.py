@@ -1,6 +1,9 @@
 import util
 
 config={
+	'system' : {
+		'debug' : 'debug' ,
+	},
 	'db' : {
 		'driver' : 'mysql' ,
 		'dbname' : '' ,
