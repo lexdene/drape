@@ -1,12 +1,12 @@
 def jinja2(templatePath,vardict):
 	template_filepath = '%s.html'%templatePath
 	import jinja2
-	env = jinja2.Environment(loader = jinja2.FileSystemLoader('app/template'))
+	env = jinja2.Environment(
+		loader = jinja2.FileSystemLoader('app/template'),
+		extensions = ['jinja2.ext.do']
+	)
 	template = env.get_template(template_filepath)
 	
-	def do(a):
-		return ''
-	vardict['do'] = do
 	return template.render(**vardict)
 
 def mako(templatePath,vardict):
