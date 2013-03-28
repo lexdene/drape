@@ -142,7 +142,7 @@ class Session(object):
 			rawdata = self.__store.get(self.__session_id)
 			if rawdata is None:
 				self.__initData(
-					aRequest.remoteAddress(),
+					aRequest.REMOTE_ADDR,
 					config.config['session']['timeout']
 				)
 			else:
