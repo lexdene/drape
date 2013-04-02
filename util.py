@@ -4,6 +4,7 @@ import urllib
 import hashlib
 import re
 import time
+import functools
 
 def urlquote(s):
 	return urllib.quote(s)
@@ -41,17 +42,25 @@ def toInt(s,default=None):
 def isInt(v):
 	return isinstance(v,(int,long))
 
-def toUtf8(f):
+def to_unicode(obj, encoding='utf-8', errors='replace'):
+    ''' convert a 'str' to 'unicode' '''
+    if isinstance(obj, basestring):
+        if not isinstance(obj, unicode):
+            obj = unicode(obj, encoding, errors)
+    return obj
+
+def utf8(f):
+	@functools.wraps(f)
 	def rf(*argc,**argv):
 		ret = f(*argc,**argv)
-		return ret.decode('utf-8')
+		return to_unicode(ret)
 	return rf
 
-@toUtf8
+@utf8
 def timeStamp2Str(t):
 	return time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(t))
 
-@toUtf8
+@utf8
 def timeStamp2Short(t):
 	now = time.localtime()
 	sti = time.localtime(t)
