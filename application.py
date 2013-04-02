@@ -4,7 +4,7 @@
 import os,sys,traceback,time
 
 # drape import
-import controller,db,config,debug,util
+import controller,db,config,util
 import request
 import response
 import cookie
@@ -191,8 +191,6 @@ class WsgiApplication(Application):
 			self.response().addHeader('Content-Length',str(len(ret)))
 		else:
 			ret = str(ret)
-		
-		debug.debug(self.response().headers())
 		
 		write = start_response(
 			self.response().status(),
