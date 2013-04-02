@@ -10,10 +10,6 @@ import response
 import cookie
 import session
 
-if sys.getdefaultencoding() != 'utf-8':
-	reload(sys)
-	sys.setdefaultencoding('utf-8')
-
 class Application(object):
 	__singleton = None
 	

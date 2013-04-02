@@ -41,9 +41,17 @@ def toInt(s,default=None):
 def isInt(v):
 	return isinstance(v,(int,long))
 
+def toUtf8(f):
+	def rf(*argc,**argv):
+		ret = f(*argc,**argv)
+		return ret.decode('utf-8')
+	return rf
+
+@toUtf8
 def timeStamp2Str(t):
 	return time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(t))
 
+@toUtf8
 def timeStamp2Short(t):
 	now = time.localtime()
 	sti = time.localtime(t)
