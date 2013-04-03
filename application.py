@@ -1,14 +1,21 @@
 # -*- coding: utf-8 -*-
 
 # system import
-import os,sys,traceback,time
+import os
+import sys
+import traceback
+import time
 
 # drape import
-import controller,db,config,util
+import controller
+import db
+import config
+import util
 import request
 import response
 import cookie
 import session
+import eventCenter
 
 class Application(object):
 	__singleton = None
@@ -23,6 +30,8 @@ class Application(object):
 		
 	def __init__(self):
 		self.__apptype = 'cgi'
+		self.__log = None
+		self.__eventCenter = None
 		self.setSingleton(self)
 		self.systemInit()
 		
@@ -32,6 +41,13 @@ class Application(object):
 		这函数理论上讲应该仅在开机/启动服务器的时候执行一次，以后就不再执行了。
 		'''
 		config.update(self.edconfig())
+		
+		# give app a chance to register event handler
+		try:
+			from app.main import init as appinit
+			appinit(self)
+		except Exception as e:
+			pass
 		
 	def requestInit(self):
 		'''
@@ -63,6 +79,13 @@ class Application(object):
 			
 			# read request params
 			self.__request.run(environ)
+			self.eventCenter().emit(
+				'after_request_run',
+				dict(
+					application = self,
+					request = self.__request
+				)
+			)
 			
 			# redirect path without postfix '/'
 			if self.__request.REQUEST_URI == self.__request.rootPath():
@@ -144,7 +167,7 @@ class Application(object):
 		pass
 		
 	def log(self,type,data):
-		if not hasattr(self,'__log'):
+		if self.__log is None:
 			import logging
 			self.__log = logging
 			dirpath = 'data/log'
@@ -159,17 +182,22 @@ class Application(object):
 			logging.addLevelName(logging.DEBUG+5,'SQL')
 			
 		if 'debug' == type:
-			logging.debug(data)
+			self.__log.debug(data)
 		elif 'info' == type:
-			logging.info(data)
+			self.__log.info(data)
 		elif 'warning' == type:
-			logging.warning(data)
+			self.__log.warning(data)
 		elif 'error' == type:
-			logging.error(data)
+			self.__log.error(data)
 		elif 'critical' == type:
-			logging.critical(data)
+			self.__log.critical(data)
 		elif 'sql' == type:
-			logging.log(logging.DEBUG+5,data)
+			self.__log.log(logging.DEBUG+5,data)
+	
+	def eventCenter(self):
+		if self.__eventCenter is None:
+			self.__eventCenter = eventCenter.EventCenter()
+		return self.__eventCenter
 
 class WsgiApplication(Application):
 	def __init__(self):
