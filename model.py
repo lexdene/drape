@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 
-import application
+import db
 
 class LinkedModel(object):
 	__cache = {}
 	def __init__(self,sTableName):
 		self.__tableName = sTableName
-		self.__db = application.Application.singleton().db()
+		self.__db = db.Db()
 		
 		# linked data
 		self.__clearLinkedData()

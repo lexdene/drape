@@ -8,7 +8,6 @@ import time
 
 # drape import
 import controller
-import db
 import config
 import util
 import request
@@ -58,7 +57,6 @@ class Application(object):
 		self.__response = response.Response()
 		self.__session = None
 		self.__cookie = cookie.Cookie(self)
-		self.__db = None
 		
 		g = controller.Controller.globalVars()
 		g.clear()
@@ -157,11 +155,6 @@ class Application(object):
 			self.__session = session.Session(self)
 			self.__session.start()
 		return self.__session
-		
-	def db(self):
-		if self.__db is None:
-			self.__db = db.Db()
-		return self.__db
 		
 	def saveUploadFile(self,fileobj,filepath):
 		pass
