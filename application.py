@@ -192,7 +192,7 @@ class Application(object):
 		elif 'critical' == type:
 			self.__log.critical(data)
 		elif 'sql' == type:
-			self.__log.log(logging.DEBUG+5,data)
+			self.__log.log(self.__log.DEBUG+5,data)
 	
 	def eventCenter(self):
 		if self.__eventCenter is None:
@@ -213,10 +213,10 @@ class WsgiApplication(Application):
 		ret = self.response().body()
 		if isinstance(ret, unicode):
 			ret = ret.encode('utf-8')
-			self.response().addHeader('Content-Length',str(len(ret)))
+			self.response().addHeader('Content-Length',len(ret))
 		elif isinstance(ret, str):
 			ret = ret
-			self.response().addHeader('Content-Length',str(len(ret)))
+			self.response().addHeader('Content-Length',len(ret))
 		else:
 			ret = str(ret)
 		
@@ -226,7 +226,7 @@ class WsgiApplication(Application):
 		)
 		
 		self._cleanup()
-		return [ret]
+		return ret
 		
 	def saveUploadFile(self,fileobj,filepath):
 		dirpath = 'static/userupload'

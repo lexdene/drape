@@ -8,7 +8,7 @@ class Response(object):
 		self.__status = status
 		
 	def addHeader(self,key,value):
-		self.__headers.append((key,value))
+		self.__headers.append((key,str(value)))
 		
 	def setBody(self,body):
 		self.__body = body
