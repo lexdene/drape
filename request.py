@@ -3,6 +3,7 @@ import cgi
 class Request(object):
 	def __init__(self):
 		self.__controllerPath = None
+		self.__env = None
 		
 	def run(self,env):
 		self.__env = env

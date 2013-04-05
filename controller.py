@@ -3,30 +3,6 @@ import application
 import json
 import exceptions
 
-def getControllerClsByPath(path):
-	x = path.split('/')
-	mod = x[1]
-	cls = x[2]
-	mod = 'app.controller.%s'%mod
-	
-	# import module
-	try:
-		mod = __import__(mod, globals(), locals(), [""])
-	except ImportError:
-		return None
-	
-	# get class
-	if hasattr(mod,cls):
-		cls = getattr(mod, cls)
-	else:
-		cls = None
-	
-	return cls
-
-def getControllerByPath(path):
-	cls = getControllerClsByPath(path)
-	return cls(path)
-
 class ControllerError(exceptions.StandardError):
 	pass
 
@@ -38,14 +14,13 @@ class InControllerRedirect(ControllerError):
 
 class Controller(object):
 	__globalVars = dict()
-	def __init__(self,path,templatePath=None):
+	def __init__(self,path,runbox):
 		self.__path = path
 		self.__vars = dict()
+		self.__runbox = runbox
 		self.__ctrlParams = None
 		
-		if templatePath is None:
-			templatePath = path
-		self.__templatePath = templatePath
+		self.__templatePath = path
 		self.__render_func = None
 		
 		self.__children = dict()
@@ -82,7 +57,7 @@ class Controller(object):
 		
 	def setParent(self,parent):
 		if isinstance(parent,str):
-			parent = getControllerByPath(parent)
+			parent = self.runbox().controller(parent)
 		self.__parent = parent
 		
 	def children(self):
@@ -129,8 +104,7 @@ class Controller(object):
 		raise InControllerRedirect(path,argv)
 		
 	def params(self):
-		aRequest = application.Application.singleton().request()
-		return aRequest.params()
+		return self.request().params()
 		
 	def files(self):
 		aRequest = application.Application.singleton().request()
@@ -143,13 +117,19 @@ class Controller(object):
 		return application.Application.singleton().cookie()
 		
 	def session(self):
-		return application.Application.singleton().session()
+		return self.runbox().session()
 		
 	def request(self):
-		return application.Application.singleton().request()
+		return self.runbox().request()
+		
+	def response(self):
+		return self.runbox().response()
+		
+	def runbox(self):
+		return self.__runbox
 		
 	def addHeader(self,key,value):
-		application.Application.singleton().response().addHeader(key,value)
+		self.response().addHeader(key,value)
 		
 	def setCtrlParams(self,params):
 		self.__ctrlParams = params
@@ -158,6 +138,6 @@ class Controller(object):
 		return self.__ctrlParams
 
 class jsonController(Controller):
-	def __init__(self,path):
-		super(jsonController,self).__init__(path)
+	def __init__(self,path,runbox):
+		super(jsonController,self).__init__(path,runbox)
 		self.setRenderFunc('drape.render.json')

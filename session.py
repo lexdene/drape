@@ -1,5 +1,6 @@
-import config
 import time,os,hashlib,re,base64,pickle,exceptions
+
+import config
 
 class ConfigError(exceptions.StandardError):
 	pass
@@ -119,15 +120,15 @@ class MemStore(StoreBase):
 		pass
 
 class Session(object):
-	def __init__(self,application):
-		self.__application = application
+	def __init__(self,runbox):
+		self.__runbox = runbox
 		self.__store = None
 		self.__data = dict()
 		
-	def start(self):
+	def run(self):
 		cookie_name = config.config['session']['cookie_name']
-		aCookie = self.__application.cookie()
-		aRequest = self.__application.request()
+		aCookie = self.__runbox.cookie()
+		aRequest = self.__runbox.request()
 		self.__store = StoreBase.create(config.config['session'])
 		
 		# read session id from cookie

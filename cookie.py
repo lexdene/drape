@@ -1,12 +1,12 @@
 import time
 
 class Cookie(object):
-	def __init__(self,application):
-		self.__application = application
+	def __init__(self,runbox):
+		self.__runbox = runbox
 		self.__requestdata = dict()
 	
 	def run(self):
-		cookiestr = self.__application.request().HTTP_COOKIE
+		cookiestr = self.__runbox.request().HTTP_COOKIE
 		if not cookiestr is None:
 			partList = cookiestr.split(';')
 			for part in partList:
@@ -38,7 +38,7 @@ class Cookie(object):
 			expires_type='relative'
 		
 		if 'relative' == path_type:
-			rootPath = self.__application.request().rootPath()
+			rootPath = self.__runbox.request().rootPath()
 			path = rootPath + path
 		
 		if not expires is None:
@@ -47,7 +47,7 @@ class Cookie(object):
 			else:
 				expires = float(expires)
 		
-		self.__addToHeader(self.__application.response(),dict(
+		self.__addToHeader(dict(
 			key = key,
 			value = value,
 			path = path,
@@ -55,7 +55,7 @@ class Cookie(object):
 			domain = domain
 		))
 		
-	def __addToHeader(self,response,cookiedata):
+	def __addToHeader(self,cookiedata):
 		s = '%(key)s=%(value)s; Path=%(path)s'%cookiedata
 		
 		if not cookiedata['expires'] is None:
@@ -67,6 +67,7 @@ class Cookie(object):
 		if not cookiedata['domain'] is None:
 			s += '; Domain=%(domain)s'%cookiedata
 		
+		response = self.__runbox.response()
 		response.addHeader(
 			'Set-Cookie',
 			s,

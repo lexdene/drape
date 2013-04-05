@@ -10,10 +10,7 @@ import time
 import controller
 import config
 import util
-import request
-import response
-import cookie
-import session
+import runbox
 import eventCenter
 
 class Application(object):
@@ -48,83 +45,62 @@ class Application(object):
 		except Exception as e:
 			pass
 		
-	def requestInit(self):
-		'''
-		请求级初始化，
-		这函数在每次请求的时候都会执行一次
-		'''
-		self.__request = request.Request()
-		self.__response = response.Response()
-		self.__session = None
-		self.__cookie = cookie.Cookie(self)
-		
-		g = controller.Controller.globalVars()
-		g.clear()
-		
-	def _cleanup(self):
-		'''
-		请求级清理函数，
-		这函数在每次请求结束的时候都会执行一次
-		'''
-		pass
-		
 	def start(self):
 		self.run()
 		
 	def run(self,environ):
 		try:
-			self.requestInit()
+			aRunBox = runbox.RunBox(self)
+			aRequest = aRunBox.request()
+			aResponse = aRunBox.response()
 			
-			# read request params
-			self.__request.run(environ)
+			# request run
+			aRequest.run(environ)
+			
+			# after request run
 			self.eventCenter().emit(
 				'after_request_run',
 				dict(
 					application = self,
-					request = self.__request
+					request = aRequest
 				)
 			)
 			
 			# redirect path without postfix '/'
-			if self.__request.REQUEST_URI == self.__request.rootPath():
-				self.__response.setStatus('301 Moved Permanently')
-				self.response().addHeader('Location',self.__request.rootPath() + '/' )
+			if aRequest.REQUEST_URI == aRequest.rootPath():
+				aResponse.setStatus('301 Moved Permanently')
+				aResponse.addHeader('Location',aRequest.rootPath() + '/' )
 				return
 			
-			# init cookie
-			self.__cookie.run()
-			
 			# base header
-			self.response().addHeader('Content-Type','text/html; charset=utf-8')
-			self.response().addHeader('X-Powered-By','python-drape')
+			aResponse.addHeader('Content-Type','text/html; charset=utf-8')
+			aResponse.addHeader('X-Powered-By','python-drape')
 			
 			# init controller
-			path = self.__request.controllerPath()
-			controllerCls = controller.getControllerClsByPath(path)
-			if controllerCls is None:
+			path = aRequest.controllerPath()
+			c = aRunBox.controller(path)
+			if c is None:
 				# notfound
-				self.__response.setStatus('404 Not Found')
+				aResponse.setStatus('404 Not Found')
 				
 				path = config.config['system']['notfound']
-				controllerCls = controller.getControllerClsByPath(path)
-				if controllerCls is None:
-					self.__response.addHeader('Content-Type','text/plain; charset=utf-8')
-					self.__response.setBody('404 Not Found')
-					return
-			c = controllerCls(path)
+				c = aRunBox.controller(path)
+				if c is None:
+					aResponse.addHeader('Content-Type','text/plain; charset=utf-8')
+					aResponse.setBody('404 Not Found')
+					return aResponse
 			
 			# response
-			self.__response.setBody(c.run())
+			aResponse.setBody(c.run())
 			
-			# session
-			if not self.__session is None:
-				self.__session.save()
+			# flush
+			aRunBox.flush()
 		except Exception as e:
-			self.__response.addHeader('Content-Type','text/plain; charset=utf-8')
+			aResponse.addHeader('Content-Type','text/plain; charset=utf-8')
 			
 			body = ''
 			if 'debug' == config.config['system']['debug']:
-				body += 'controllerPath:%s\n'%self.__request.controllerPath()
+				body += 'controllerPath:%s\n'%aRequest.controllerPath()
 				body += traceback.format_exc()
 				body += "environ:\n"
 				for k,v in environ.iteritems():
@@ -132,29 +108,15 @@ class Application(object):
 			else:
 				body = '500 Internal Server Error\n'
 			
-			self.__response.setBody(body)
-			self.__response.setStatus('500 Internal Server Error')
+			aResponse.setBody(body)
+			aResponse.setStatus('500 Internal Server Error')
+		return aResponse
 		
 	def edconfig(self):
 		return dict()
 		
 	def apptype(self):
 		return self.__apptype
-		
-	def request(self):
-		return self.__request
-		
-	def response(self):
-		return self.__response
-		
-	def cookie(self):
-		return self.__cookie
-		
-	def session(self):
-		if self.__session is None:
-			self.__session = session.Session(self)
-			self.__session.start()
-		return self.__session
 		
 	def saveUploadFile(self,fileobj,filepath):
 		pass
@@ -201,24 +163,23 @@ class WsgiApplication(Application):
 		return
 		
 	def __call__(self,environ, start_response):
-		self.run(environ)
+		aResponse = self.run(environ)
 		
-		ret = self.response().body()
+		ret = aResponse.body()
 		if isinstance(ret, unicode):
 			ret = ret.encode('utf-8')
-			self.response().addHeader('Content-Length',len(ret))
+			aResponse.addHeader('Content-Length',len(ret))
 		elif isinstance(ret, str):
 			ret = ret
-			self.response().addHeader('Content-Length',len(ret))
+			aResponse.addHeader('Content-Length',len(ret))
 		else:
 			ret = str(ret)
 		
 		write = start_response(
-			self.response().status(),
-			self.response().headers()
+			aResponse.status(),
+			aResponse.headers()
 		)
 		
-		self._cleanup()
 		return ret
 		
 	def saveUploadFile(self,fileobj,filepath):
