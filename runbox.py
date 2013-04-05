@@ -11,6 +11,8 @@ class RunBox(object):
 		self.__session = None
 		self.__cookie = None
 		
+		self.__variables = dict()
+		
 	def request(self):
 		if self.__request is None:
 			self.__request = request.Request()
@@ -62,3 +64,6 @@ class RunBox(object):
 			return cls(path,runbox,**params)
 			
 		return getControllerByPath(path,self,params)
+		
+	def variables(self):
+		return self.__variables

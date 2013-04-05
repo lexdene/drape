@@ -13,7 +13,6 @@ class InControllerRedirect(ControllerError):
 		self.argv = argv
 
 class Controller(object):
-	__globalVars = dict()
 	def __init__(self,path,runbox):
 		self.__path = path
 		self.__vars = dict()
@@ -35,9 +34,8 @@ class Controller(object):
 	def getVardict(self):
 		return self.__vars
 		
-	@classmethod
-	def globalVars(cls):
-		return cls.__globalVars
+	def globalVars(self):
+		return self.runbox().variables()
 		
 	def path(self):
 		return self.__path
