@@ -1,7 +1,7 @@
-import config
-import application
 import json
 import exceptions
+
+import config
 
 class ControllerError(exceptions.StandardError):
 	pass
@@ -12,14 +12,20 @@ class InControllerRedirect(ControllerError):
 		self.path = path
 		self.argv = argv
 
+class PathInvalid(Exception):
+	pass
+
 class Controller(object):
-	def __init__(self,path,runbox):
-		self.__path = path
+	def __init__(self,runbox):
+		mod = self.__module__.split('.')[-1]
+		cls = self.__class__.__name__
+		self.__path = '/%s/%s'%(mod,cls)
+		
 		self.__vars = dict()
 		self.__runbox = runbox
 		self.__ctrlParams = None
 		
-		self.__templatePath = path
+		self.__templatePath = self.__path
 		self.__render_func = None
 		
 		self.__children = dict()
@@ -104,16 +110,6 @@ class Controller(object):
 	def params(self):
 		return self.request().params()
 		
-	def files(self):
-		aRequest = application.Application.singleton().request()
-		return aRequest.files()
-		
-	def saveUploadFile(self,fileobj,filepath):
-		return application.Application.singleton().saveUploadFile(fileobj,filepath)
-		
-	def cookie(self):
-		return application.Application.singleton().cookie()
-		
 	def session(self):
 		return self.runbox().session()
 		
@@ -136,6 +132,6 @@ class Controller(object):
 		return self.__ctrlParams
 
 class jsonController(Controller):
-	def __init__(self,path,runbox):
+	def __init__(self,runbox):
 		super(jsonController,self).__init__(path,runbox)
 		self.setRenderFunc('drape.render.json')

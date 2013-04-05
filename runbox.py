@@ -61,7 +61,7 @@ class RunBox(object):
 			cls = getControllerClsByPath(path)
 			if cls is None:
 				return None
-			return cls(path,runbox,**params)
+			return cls(runbox,**params)
 			
 		return getControllerByPath(path,self,params)
 		
