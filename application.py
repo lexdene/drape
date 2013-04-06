@@ -36,8 +36,6 @@ class Application(object):
 		系统级初始化，
 		这函数理论上讲应该仅在开机/启动服务器的时候执行一次，以后就不再执行了。
 		'''
-		config.update(self.edconfig())
-		
 		# give app a chance to register event handler
 		try:
 			from app.main import init as appinit
@@ -111,9 +109,6 @@ class Application(object):
 			aResponse.setBody(body)
 			aResponse.setStatus('500 Internal Server Error')
 		return aResponse
-		
-	def edconfig(self):
-		return dict()
 		
 	def apptype(self):
 		return self.__apptype
@@ -200,7 +195,7 @@ class SaeApplication(WsgiApplication):
 		super(SaeApplication,self).__init__()
 		self.__apptype = 'sae'
 		
-	def edconfig(self):
+	def sae_config(self):
 		import sae.const
 		config={
 			'db' : {
