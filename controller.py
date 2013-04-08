@@ -133,5 +133,5 @@ class Controller(object):
 
 class jsonController(Controller):
 	def __init__(self,runbox):
-		super(jsonController,self).__init__(path,runbox)
+		super(jsonController,self).__init__(runbox)
 		self.setRenderFunc('drape.render.json')
