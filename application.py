@@ -9,7 +9,6 @@ import time
 # drape import
 import controller
 import config
-import util
 import runbox
 import eventCenter
 
@@ -222,7 +221,7 @@ class SaeApplication(WsgiApplication):
 		
 	def log(self,type,data):
 		print '[%s] [%s] %s'%(
-				util.timeStamp2Str( time.time() ),
+				time.strftime('%Y-%m-%d %H:%M:%S',time.localtime()),
 				type,
 				str(data)
 			)
