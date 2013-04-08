@@ -3,7 +3,8 @@ import util
 config={
 	'system' : {
 		'debug' : 'debug' ,
-		'notfound' : '/notfound/Index'
+		'notfound' : '/notfound/Index',
+		'salt' : util.md5sum('drape'),
 	},
 	'db' : {
 		'driver' : 'mysql' ,
