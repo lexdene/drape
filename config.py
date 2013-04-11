@@ -4,7 +4,6 @@ config={
 	'system' : {
 		'debug' : 'debug' ,
 		'notfound' : '/notfound/Index',
-		'salt' : util.md5sum('drape'),
 	},
 	'db' : {
 		'driver' : 'mysql' ,

@@ -2,6 +2,8 @@ import urllib
 import hashlib
 import re
 import functools
+import random
+import string
 
 def urlquote(s):
 	return urllib.quote(s)
@@ -52,3 +54,7 @@ def utf8(f):
 		ret = f(*argc,**argv)
 		return to_unicode(ret)
 	return rf
+
+@utf8
+def random_str(length=8, chars=string.ascii_uppercase + string.digits):
+	return ''.join(random.choice(chars) for x in range(length))
