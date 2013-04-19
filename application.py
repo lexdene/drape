@@ -48,6 +48,16 @@ class Application(object):
 	def run(self,environ):
 		try:
 			aRunBox = runbox.RunBox(self)
+			
+			# run begin
+			self.eventCenter().emit(
+				'run_begin',
+				dict(
+					runbox = aRunBox
+				)
+			)
+			
+			# init request and response
 			aRequest = aRunBox.request()
 			aResponse = aRunBox.response()
 			
@@ -92,6 +102,14 @@ class Application(object):
 			
 			# flush
 			aRunBox.flush()
+			
+			# run end
+			self.eventCenter().emit(
+				'run_end',
+				dict(
+					runbox = aRunBox
+				)
+			)
 		except Exception as e:
 			aResponse.addHeader('Content-Type','text/plain; charset=utf-8')
 			
