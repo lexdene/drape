@@ -1,2 +1,2 @@
 import application,controller,model,validate
-version = '0.1.6.24'
+version = '0.1.6.25'

@@ -4,6 +4,7 @@ import re
 import functools
 import random
 import string
+import os
 
 def urlquote(s):
 	return urllib.quote(s)
@@ -58,3 +59,7 @@ def utf8(f):
 @utf8
 def random_str(length=8, chars=string.ascii_uppercase + string.digits):
 	return ''.join(random.choice(chars) for x in range(length))
+
+def mkdir_not_existing(path):
+	if not os.path.isdir(path):
+		os.makedirs(path)

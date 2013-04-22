@@ -1,11 +1,19 @@
+
+_jinja2_env = None
 def jinja2(templatePath,vardict):
+	global _jinja2_env
+	if _jinja2_env is None:
+		import jinja2
+		import util
+		util.mkdir_not_existing('data/jinja_cache')
+		_jinja2_env = jinja2.Environment(
+			loader = jinja2.FileSystemLoader('app/template'),
+			extensions = ['jinja2.ext.do'],
+			bytecode_cache = jinja2.FileSystemBytecodeCache('data/jinja_cache')
+		)
+	
 	template_filepath = '%s.html'%templatePath
-	import jinja2
-	env = jinja2.Environment(
-		loader = jinja2.FileSystemLoader('app/template'),
-		extensions = ['jinja2.ext.do']
-	)
-	template = env.get_template(template_filepath)
+	template = _jinja2_env.get_template(template_filepath)
 	
 	return template.render(**vardict)
 
