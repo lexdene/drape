@@ -1,6 +1,8 @@
-import time,os,hashlib,re,base64,pickle,exceptions
+import time,hashlib,re,base64,pickle,exceptions
+import os
 
 import config
+import util
 
 class ConfigError(exceptions.StandardError):
 	pass
@@ -63,10 +65,7 @@ class FileStore(StoreBase):
 		
 	def __setitem__(self, key, value):
 		directory = self.config()['file_directory']
-		try:
-			os.makedirs( directory )
-		except:
-			pass
+		util.mkdir_not_existing( directory )
 		
 		path = '%s/%s'%(directory,key)
 		fout = open( path ,'w')

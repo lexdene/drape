@@ -11,6 +11,7 @@ import controller
 import config
 import runbox
 import eventCenter
+import util
 
 class Application(object):
 	__singleton = None
@@ -138,8 +139,7 @@ class Application(object):
 			import logging
 			self.__log = logging
 			dirpath = 'data/log'
-			if not os.path.isdir(dirpath):
-				os.makedirs(dirpath)
+			util.mkdir_not_existing(dirpath)
 			filepath = dirpath + '/%s.log'%time.strftime('%Y-%m-%d',time.localtime())
 			logging.basicConfig(
 				filename = filepath,
