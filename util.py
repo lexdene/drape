@@ -47,6 +47,8 @@ def to_unicode(obj, encoding='utf-8', errors='replace'):
     if isinstance(obj, basestring):
         if not isinstance(obj, unicode):
             obj = unicode(obj, encoding, errors)
+    else:
+        obj = unicode(str(obj), encoding, errors)
     return obj
 
 def utf8(f):

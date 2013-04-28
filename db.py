@@ -28,22 +28,26 @@ class Db(object):
 	def tablePrefix(self):
 		return self.__config['tablePrefix']
 		
-	def _conn(self):
-		return self.__conn
+#	def _conn(self):
+#		return self.__conn
 		
 	def query(self,sql,params=None):
 		cursor=self.__conn.cursor(self.__driver.cursors.DictCursor)
 		import debug
-		debug.sql(sql)
-		n=cursor.execute(sql,params)
-		return cursor.fetchall()
+		try:
+			n = cursor.execute(sql, params)
+			return cursor.fetchall()
+		finally:
+			debug.sql( cursor._last_executed )
 		
 	def execute(self,sql,params=None):
 		cursor=self.__conn.cursor()
 		import debug
-		debug.sql(sql)
-		n = cursor.execute(sql,params)
-		return n
+		try:
+			n = cursor.execute(sql, params)
+			return n
+		finally:
+			debug.sql( cursor._last_executed )
 		
 	def insert_id(self):
 		return self.__conn.insert_id()

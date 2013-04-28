@@ -123,17 +123,33 @@ class LinkedModel(object):
 		columnList = list()
 		valueList = list()
 		params = dict()
+		max_value_length = 0
 		for column,value in data.iteritems():
 			columnList.append(column)
-			valueList.append('%%(%s)s'%column)
-			params[column] = value
+			if not isinstance(value,(list,tuple) ):
+				value = ( value, )
+
+			max_value_length = max( max_value_length, len(value) )
+
+			for i,v in enumerate(value):
+				key = '%s_%d'%(column,i)
+				# valueList.append('%%(%s)s'%column)
+				params[key] = v
 		
 		tableString = self.__db.tablePrefix() + self.__tableName
-		queryString = "insert into %(table)s (%(columns)s) values(%(values)s)"%{
+		queryString = "insert into %(table)s (%(columns)s) values %(values)s"%{
 			'table' : tableString,
 			'columns' : ','.join(columnList),
-			'values' : ','.join(valueList)
+			'values' : ','.join([
+				'( %s )'% ','.join([
+					'%%(%s_%d)s'%(column,i)
+					for column in columnList
+				])
+				for i in range(0,max_value_length)
+			])
 		}
+
+		# raise ValueError(queryString)
 		self.__clearLinkedData()
 		n = self.__db.execute(queryString,params)
 		insert_id = self.__db.insert_id()
@@ -333,8 +349,15 @@ class LinkedModel(object):
 					whereStringPartedList.append( w )
 				elif isinstance(w,tuple):
 					key,value = w
-					whereStringPartedList.append( "%s = %%(%s)s"%(key,key) )
-					self.__appendLinkedData('params',w)
+					if isinstance(value,(basestring,int,long)):
+						whereStringPartedList.append( "%s = %%(%s)s"%(key,key) )
+						self.__appendLinkedData('params',w)
+					elif isinstance(value,tuple):
+						relation, realvalue = value
+						if 'in' == relation:
+							whereStringPartedList.append( "%s in %s"%(key,tuple(realvalue) ) )
+					else:
+						raise ValueError(value)
 			whereString = "(" + " ) AND \n (".join( whereStringPartedList ) + ")"
 		else:
 			whereString = '1'

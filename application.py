@@ -147,6 +147,9 @@ class Application(object):
 				format = '[%(asctime)s] [%(levelname)s] %(message)s'
 			)
 			logging.addLevelName(logging.DEBUG+5,'SQL')
+
+		# remove \n
+		data = util.to_unicode(data).replace(u'\n',u'\\n')
 			
 		if 'debug' == type:
 			self.__log.debug(data)
