@@ -169,6 +169,11 @@ class Session(object):
 				config.config['session']['timeout']
 			)
 		
+	def setCookieAttr(self, path='/', expired=None, domain=None ):
+		cookie_name = config.config['session']['cookie_name']
+		aCookie = self.__runbox.cookie()
+		aCookie.add(cookie_name, self.__session_id, path, expired, domain)
+		
 	def save(self):
 		rawdata = self.__encodeData()
 		self.__store[self.__session_id] = rawdata

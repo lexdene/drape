@@ -31,7 +31,7 @@ class Cookie(object):
 		else:
 			path_type='relative'
 		
-		# expires can be string or tuple
+		# expires can be float or tuple
 		if isinstance(expires,tuple):
 			expires,expires_type = expires
 		else:
