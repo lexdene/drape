@@ -101,15 +101,18 @@ class LinkedModel(object):
 		else:
 			return res[0]
 		
-	def count(self):
+	def count(self, countField='*'):
 		tableString = self.__buildTableString()
 		joinString = self.__buildJoinString()
 		whereString = self.__buildWhereString()
+		groupString = self.__buildGroupString()
 		
-		queryString = "select count(*) from %s \n%s \nwhere %s"%(
+		queryString = "select count(%s) from %s \n%s \nwhere %s\n%s"%(
+			countField,
 			tableString,
 			joinString,
-			whereString
+			whereString,
+			groupString
 		)
 		
 		paramsData = self.__getLinkedData('params')
@@ -117,7 +120,7 @@ class LinkedModel(object):
 			paramsData = list()
 		self.__clearLinkedData()
 		aIter = self.__db.query(queryString,dict(paramsData))
-		return aIter[0]['count(*)']
+		return aIter[0]['count(%s)'%countField]
 		
 	def insert(self,**data):
 		columnList = list()
