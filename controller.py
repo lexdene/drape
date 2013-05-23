@@ -25,7 +25,7 @@ class Controller(object):
 		self.__runbox = runbox
 		self.__ctrlParams = None
 		
-		self.__templatePath = self.__path
+		self.__templatePath = None
 		self.__render_func = None
 		
 		self.__children = dict()
@@ -50,7 +50,10 @@ class Controller(object):
 		self.__templatePath = templatePath
 		
 	def templatePath(self):
-		return self.__templatePath
+		if self.__templatePath:
+			return self.__templatePath
+		else:
+			return self.__path
 		
 	def setRenderFunc(self,render_func):
 		self.__render_func = render_func
@@ -102,7 +105,7 @@ class Controller(object):
 		func = x[-1]
 		mod = __import__(mod, globals(), locals(), [""])
 		func = getattr(mod, func)
-		return func(self.__templatePath,self.getVardict())
+		return func(self.templatePath(), self.getVardict())
 		
 	def icRedirect(self,path,*argv):
 		raise InControllerRedirect(path,argv)
