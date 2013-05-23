@@ -1,7 +1,8 @@
 import config
-import exceptions
 
-class DbError(exceptions.StandardError):
+import debug
+
+class DbError(Exception):
 	pass
 
 class ConfigError(DbError):
@@ -28,24 +29,27 @@ class Db(object):
 	def tablePrefix(self):
 		return self.__config['tablePrefix']
 		
-#	def _conn(self):
-#		return self.__conn
-		
+	def queryOne(self, sql, params=None):
+		cursor = self.__conn.cursor()
+		try:
+			cursor.execute(sql, params)
+			return cursor.fetchone()
+		finally:
+			debug.sql( cursor._last_executed )
+
 	def query(self,sql,params=None):
 		cursor=self.__conn.cursor(self.__driver.cursors.DictCursor)
-		import debug
 		try:
-			n = cursor.execute(sql, params)
+			cursor.execute(sql, params)
 			return cursor.fetchall()
 		finally:
 			debug.sql( cursor._last_executed )
 		
 	def execute(self,sql,params=None):
 		cursor=self.__conn.cursor()
-		import debug
 		try:
-			n = cursor.execute(sql, params)
-			return n
+			cursor.execute(sql, params)
+			return cursor.rowcount
 		finally:
 			debug.sql( cursor._last_executed )
 		

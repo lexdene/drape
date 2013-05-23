@@ -119,8 +119,9 @@ class LinkedModel(object):
 		if paramsData is None:
 			paramsData = list()
 		self.__clearLinkedData()
-		aIter = self.__db.query(queryString,dict(paramsData))
-		return aIter[0]['count(%s)'%countField]
+
+		result = self.__db.queryOne(queryString,dict(paramsData))
+		return result[0]
 		
 	def insert(self,**data):
 		columnList = list()
@@ -136,7 +137,6 @@ class LinkedModel(object):
 
 			for i,v in enumerate(value):
 				key = '%s_%d'%(column,i)
-				# valueList.append('%%(%s)s'%column)
 				params[key] = v
 		
 		tableString = self.__db.tablePrefix() + self.__tableName
@@ -152,8 +152,8 @@ class LinkedModel(object):
 			])
 		}
 
-		# raise ValueError(queryString)
 		self.__clearLinkedData()
+
 		n = self.__db.execute(queryString,params)
 		insert_id = self.__db.insert_id()
 		self.__db.commit()
@@ -182,7 +182,6 @@ class LinkedModel(object):
 		
 		n = self.__db.execute(queryString,dict(paramsData))
 		self.__db.commit()
-		
 		return n
 		
 	def __appendLinkedData(self,name,value):
