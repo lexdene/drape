@@ -357,7 +357,16 @@ class LinkedModel(object):
 					elif isinstance(value,tuple):
 						relation, realvalue = value
 						if 'in' == relation:
-							whereStringPartedList.append( "%s in %s"%(key,tuple(realvalue) ) )
+							whereStringPartedList.append(
+								"%s in %s"%(
+									key,
+									'(' + ','.join(
+										( '%%(%s_%d)s'%(key,i) for i,v in enumerate(realvalue) )
+									) + ')'
+								)
+							)
+							for i,v in enumerate(realvalue):
+								self.__appendLinkedData('params',('%s_%d'%(key,i),v ) )
 					else:
 						raise ValueError(value)
 			whereString = "(" + " ) AND \n (".join( whereStringPartedList ) + ")"
