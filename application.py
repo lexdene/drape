@@ -131,7 +131,7 @@ class Application(object):
 	def apptype(self):
 		return self.__apptype
 		
-	def saveUploadFile(self,fileobj,filepath):
+	def saveUploadFile(self,fileobj,filepath, domain):
 		pass
 		
 	def log(self,type,data):
@@ -197,18 +197,20 @@ class WsgiApplication(Application):
 		
 		return ret
 		
-	def saveUploadFile(self,fileobj,filepath):
-		dirpath = 'static/userupload'
+	def saveUploadFile(self,fileobj,filepath, domain):
+		dirpath = 'data/%s'%domain
+		urldirpath = 'static/upload/%s'%domain
+
+		util.mkdir_not_existing( dirpath )
 		
-		if not os.path.isdir(dirpath):
-			os.makedirs(dirpath)
-		
-		filepath = os.path.join(dirpath,filepath)
-		fout = open( filepath ,'w')
-		fileobj.file.seek(0)
-		fout.write( fileobj.file.read() )
-		fout.close()
-		return os.path.join(self.request().rootPath(),filepath)
+		fileurlpath = os.path.join(urldirpath, filepath)
+		filepath = os.path.join(dirpath, filepath)
+
+		with open( filepath ,'w') as fout:
+			fileobj.file.seek(0)
+			fout.write( fileobj.file.read() )
+
+		return fileurlpath
 
 class SaeApplication(WsgiApplication):
 	def __init__(self):

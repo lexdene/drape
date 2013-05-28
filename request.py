@@ -54,7 +54,7 @@ class Request(object):
 			if value.filename is None:
 				self.__paramDict[key] = value.value
 			else:
-				self.__fileDict[key] = value
+				self.__paramDict[key] = value
 		
 	def __getattr__(self,key):
 		return self.__env.get(key,None)
