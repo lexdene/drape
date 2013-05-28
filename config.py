@@ -4,6 +4,8 @@ config={
 	'system' : {
 		'debug' : 'debug' ,
 		'notfound' : '/notfound/Index',
+		'default_mod': 'index',
+		'default_cls': 'Index',
 	},
 	'db' : {
 		'driver' : 'mysql' ,

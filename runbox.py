@@ -2,6 +2,7 @@ import request
 import response
 import cookie
 import session
+import config
 
 class RunBox(object):
 	def __init__(self,application):
@@ -44,12 +45,26 @@ class RunBox(object):
 			x = path.split('/')
 			mod = x[1]
 			cls = x[2]
+
+			# default mod if empty
+			if '' == mod:
+				mod = config.config['system']['default_mod']
+
 			mod = 'app.controller.%s'%mod
+
 			# import module
 			try:
 				mod = __import__(mod, globals(), locals(), [""])
 			except ImportError:
 				return None
+
+			# default cls if empty
+			if '' == cls:
+				if hasattr(mod, 'default_cls'):
+					cls = mod.default_cls
+				else:
+					cls = config.config['system']['default_cls']
+
 			# get class
 			if hasattr(mod,cls):
 				cls = getattr(mod, cls)

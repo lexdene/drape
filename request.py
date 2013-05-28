@@ -24,8 +24,8 @@ class Request(object):
 				return l[index]
 			else:
 				return defaultValue
-		mod = list_get(x,0,'index')
-		cls = list_get(x,1,'Index')
+		mod = list_get(x,0,'')
+		cls = list_get(x,1,'')
 		
 		self.__controllerPath = '/%s/%s'%(mod,cls)
 		
