@@ -4,6 +4,7 @@ import db
 
 class LinkedModel(object):
 	__cache = {}
+
 	def __init__(self,sTableName):
 		self.__tableName = sTableName
 		self.__db = db.Db()
@@ -156,7 +157,6 @@ class LinkedModel(object):
 
 		n = self.__db.execute(queryString,params)
 		insert_id = self.__db.insert_id()
-		self.__db.commit()
 		return insert_id
 		
 	def update(self,**data):
@@ -185,7 +185,7 @@ class LinkedModel(object):
 		return n
 		
 	def __appendLinkedData(self,name,value):
-		if not self.__linkedData.has_key(name):
+		if not name in self.__linkedData:
 			self.__linkedData[name] = list()
 		
 		self.__linkedData[name].append( value )
@@ -194,10 +194,7 @@ class LinkedModel(object):
 		self.__linkedData[name] = value
 		
 	def __getLinkedData(self,name):
-		if self.__linkedData.has_key( name ):
-			return self.__linkedData[name]
-		else:
-			return None
+		return self.__linkedData.get(name, None)
 		
 	def __clearLinkedData(self):
 		self.__linkedData = dict()

@@ -55,6 +55,3 @@ class Db(object):
 		
 	def insert_id(self):
 		return self.__conn.insert_id()
-		
-	def commit(self):
-		return self.__conn.commit()
