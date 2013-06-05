@@ -181,7 +181,6 @@ class LinkedModel(object):
 		self.__clearLinkedData()
 		
 		n = self.__db.execute(queryString,dict(paramsData))
-		self.__db.commit()
 		return n
 		
 	def __appendLinkedData(self,name,value):
