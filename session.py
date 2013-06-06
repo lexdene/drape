@@ -125,10 +125,10 @@ class Session(object):
 		self.__data = dict()
 		
 	def run(self):
-		cookie_name = config.config['session']['cookie_name']
+		cookie_name = config.get_value('session/cookie_name')
 		aCookie = self.__runbox.cookie()
 		aRequest = self.__runbox.request()
-		self.__store = StoreBase.create(config.config['session'])
+		self.__store = StoreBase.create(config.get_value('session'))
 		
 		# read session id from cookie
 		self.__session_id = aCookie.get(cookie_name)
@@ -143,7 +143,7 @@ class Session(object):
 			if rawdata is None:
 				self.__initData(
 					aRequest.REMOTE_ADDR,
-					config.config['session']['timeout']
+					config.get_value('session/timeout')
 				)
 			else:
 				self.__data = self.__decodeData(rawdata)
@@ -154,23 +154,23 @@ class Session(object):
 					or time.time() > self.get('_expired'):
 				self.__initData(
 					aRequest.REMOTE_ADDR,
-					config.config['session']['timeout']
+					config.get_value('session/timeout')
 				)
 			
 		# recreate session_id
 		if self.__session_id is None:
 			self.__session_id = self.__recreate_session_id(
 				aRequest.REMOTE_ADDR,
-				config.config['session']['secret_key']
+				config.get_value('session/secret_key')
 			)
 			aCookie.add(cookie_name,self.__session_id)
 			self.__initData(
 				aRequest.REMOTE_ADDR,
-				config.config['session']['timeout']
+				config.get_value('session/timeout')
 			)
 		
 	def setCookieAttr(self, path='/', expired=None, domain=None ):
-		cookie_name = config.config['session']['cookie_name']
+		cookie_name = config.get_value('session/cookie_name')
 		aCookie = self.__runbox.cookie()
 		aCookie.add(cookie_name, self.__session_id, path, expired, domain)
 		

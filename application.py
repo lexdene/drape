@@ -115,7 +115,7 @@ class Application(object):
 			aResponse.addHeader('Content-Type','text/plain; charset=utf-8')
 			
 			body = ''
-			if 'debug' == config.config['system']['debug']:
+			if 'debug' == config.get_value('system/debug'):
 				body += 'controllerPath:%s\n'%aRequest.controllerPath()
 				body += traceback.format_exc()
 				body += "environ:\n"

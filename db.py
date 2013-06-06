@@ -10,7 +10,7 @@ class ConfigError(DbError):
 
 class Db(object):
 	def __init__(self):
-		dbconfig = config.config['db']
+		dbconfig = config.get_value('db')
 		self.__config = dbconfig
 		if dbconfig['driver'] == 'mysql':
 			import MySQLdb

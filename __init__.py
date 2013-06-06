@@ -2,4 +2,4 @@ import application
 import controller
 import model
 import validate
-version = '0.1.6.36'
+version = '0.1.6.37'

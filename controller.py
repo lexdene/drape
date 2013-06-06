@@ -97,7 +97,7 @@ class Controller(object):
 		
 	def render(self):
 		if self.__render_func is None:
-			render_func = config.config['view']['render_func']
+			render_func = config.get_value('view/render_func')
 		else:
 			render_func = self.__render_func
 		x = render_func.split('.')
