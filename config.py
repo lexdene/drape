@@ -18,6 +18,7 @@ __config__ = {
         'port': 1433,
         'charset': 'utf8',
         'tablePrefix': '',
+        'log_sql': True,
     },
     'session': {
         'store_type': 'file',

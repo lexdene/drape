@@ -35,7 +35,8 @@ class Db(object):
 			cursor.execute(sql, params)
 			return cursor.fetchone()
 		finally:
-			debug.sql( cursor._last_executed )
+			if self.__config['log_sql']:
+				debug.sql( cursor._last_executed )
 
 	def query(self,sql,params=None):
 		cursor=self.__conn.cursor(self.__driver.cursors.DictCursor)
@@ -43,7 +44,8 @@ class Db(object):
 			cursor.execute(sql, params)
 			return cursor.fetchall()
 		finally:
-			debug.sql( cursor._last_executed )
+			if self.__config['log_sql']:
+				debug.sql( cursor._last_executed )
 		
 	def execute(self,sql,params=None):
 		cursor=self.__conn.cursor()
@@ -51,7 +53,8 @@ class Db(object):
 			cursor.execute(sql, params)
 			return cursor.rowcount
 		finally:
-			debug.sql( cursor._last_executed )
+			if self.__config['log_sql']:
+				debug.sql( cursor._last_executed )
 		
 	def insert_id(self):
 		return self.__conn.insert_id()
