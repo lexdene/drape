@@ -140,6 +140,10 @@ class LinkedModel(object):
 				key = '%s_%d'%(column,i)
 				params[key] = v
 		
+		# empty
+		if max_value_length <= 0:
+			return
+
 		tableString = self.__db.tablePrefix() + self.__tableName
 		queryString = "insert into %(table)s (%(columns)s) values %(values)s"%{
 			'table' : tableString,
