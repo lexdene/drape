@@ -367,6 +367,11 @@ class LinkedModel(object):
 							)
 							for i,v in enumerate(realvalue):
 								self.__appendLinkedData('params',('%s_%d'%(key,i),v ) )
+						elif relation in ('>', '<', '>=', '<='):
+							whereStringPartedList.append('%s %s %%(%s)s' % (key, relation, key) )
+							self.__appendLinkedData('params',(key, realvalue) )
+						else:
+							raise ValueError('no such relation: %s' % relation)
 					else:
 						raise ValueError(value)
 			whereString = "(" + " ) AND \n (".join( whereStringPartedList ) + ")"

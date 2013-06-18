@@ -91,7 +91,7 @@ class Application(object):
 				# notfound
 				aResponse.setStatus('404 Not Found')
 				
-				path = config.config['system']['notfound']
+				path = config.get_value('system/notfound')
 				c = aRunBox.controller(path)
 				if c is None:
 					aResponse.addHeader('Content-Type','text/plain; charset=utf-8')
