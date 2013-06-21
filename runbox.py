@@ -60,16 +60,14 @@ class RunBox(object):
 
 			# default cls if empty
 			if '' == cls:
-				if hasattr(mod, 'default_cls'):
-					cls = mod.default_cls
-				else:
-					cls = config.get_value('system/default_cls')
+				cls = getattr(
+					mod,
+					'DEFAULT_CLS',
+					config.get_value('system/default_cls')
+				)
 
 			# get class
-			if hasattr(mod,cls):
-				cls = getattr(mod, cls)
-			else:
-				cls = None
+			cls = getattr(mod, cls, None)
 			return cls
 			
 		def getControllerByPath(path,runbox,params):
