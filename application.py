@@ -41,6 +41,8 @@ class Application(object):
 			from app.main import init as appinit
 			appinit(self)
 		except Exception as e:
+			import debug
+			debug.debug('app init error: %s' % e)
 			pass
 		
 	def start(self):
@@ -53,9 +55,7 @@ class Application(object):
 			# run begin
 			self.eventCenter().emit(
 				'run_begin',
-				dict(
-					runbox = aRunBox
-				)
+				dict(runbox=aRunBox)
 			)
 			
 			# init request and response
@@ -69,20 +69,16 @@ class Application(object):
 			self.eventCenter().emit(
 				'after_request_run',
 				dict(
-					application = self,
-					request = aRequest
+					application=self,
+					request=aRequest
 				)
 			)
 			
 			# redirect path without postfix '/'
 			if aRequest.REQUEST_URI == aRequest.rootPath():
 				aResponse.setStatus('301 Moved Permanently')
-				aResponse.addHeader('Location',aRequest.rootPath() + '/' )
+				aResponse.addHeader('Location', aRequest.rootPath() + '/')
 				return
-			
-			# base header
-			aResponse.addHeader('Content-Type','text/html; charset=utf-8')
-			aResponse.addHeader('X-Powered-By','python-drape')
 			
 			# init controller
 			path = aRequest.controllerPath()
@@ -90,7 +86,7 @@ class Application(object):
 			if c is None:
 				# notfound
 				aResponse.setStatus('404 Not Found')
-				
+
 				path = config.get_value('system/notfound')
 				c = aRunBox.controller(path)
 				if c is None:
@@ -183,10 +179,6 @@ class WsgiApplication(Application):
 		ret = aResponse.body()
 		if isinstance(ret, unicode):
 			ret = ret.encode('utf-8')
-			aResponse.addHeader('Content-Length',len(ret))
-		elif isinstance(ret, str):
-			ret = ret
-			aResponse.addHeader('Content-Length',len(ret))
 		else:
 			ret = str(ret)
 		

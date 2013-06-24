@@ -138,3 +138,6 @@ class jsonController(Controller):
 	def __init__(self,runbox):
 		super(jsonController,self).__init__(runbox)
 		self.setRenderFunc('drape.render.json')
+		
+		response = self.response()
+		response.setContentType('application/json')

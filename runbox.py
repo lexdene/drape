@@ -37,8 +37,12 @@ class RunBox(object):
 		return self.__cookie
 		
 	def flush(self):
+		# session
 		if not self.__session is None:
 			self.__session.save()
+
+		# response
+		self.__response.flush()
 		
 	def controller(self,path,**params):
 		def getControllerClsByPath(path):
