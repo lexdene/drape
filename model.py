@@ -36,12 +36,15 @@ class LinkedModel(object):
 		return self
 		
 	def where(self,data = None,**w):
+		'''
+			设置where参数
+			字典的形式
+		'''
 		if data is None:
 			data = w
 		else:
 			data.update(w)
-		for i,v in data.iteritems():
-			self.__appendLinkedData('where',(i,v))
+		self.__setLinkedData('where', data)
 		return self
 		
 	def order(self,w):
@@ -348,44 +351,55 @@ class LinkedModel(object):
 				joinStringPartedList.append( joinStringParted )
 		joinString = " \n".join( joinStringPartedList )
 		return joinString
-		
-	def __buildWhereString(self):
-		whereData = self.__getLinkedData('where')
-		if whereData:
-			whereStringPartedList = list()
-			for w in whereData:
-				if isinstance(w,basestring):
-					whereStringPartedList.append( w )
-				elif isinstance(w,tuple):
-					key,value = w
-					if isinstance(value,(basestring,int,long)):
-						whereStringPartedList.append( "%s = %%(%s)s"%(key,key) )
-						self.__appendLinkedData('params',w)
-					elif isinstance(value,tuple):
-						relation, realvalue = value
-						if 'in' == relation:
-							whereStringPartedList.append(
-								"%s in %s"%(
-									key,
-									'(' + ','.join(
-										( '%%(%s_%d)s'%(key,i) for i,v in enumerate(realvalue) )
-									) + ')'
-								)
-							)
-							for i,v in enumerate(realvalue):
-								self.__appendLinkedData('params',('%s_%d'%(key,i),v ) )
-						elif relation in ('>', '<', '>=', '<='):
-							whereStringPartedList.append('%s %s %%(%s)s' % (key, relation, key) )
-							self.__appendLinkedData('params',(key, realvalue) )
-						else:
-							raise ValueError('no such relation: %s' % relation)
-					else:
-						raise ValueError(value)
-			whereString = "(" + " ) AND \n (".join( whereStringPartedList ) + ")"
+
+	def __buildWherePart(self, key, value):
+		if '$str' == key:
+			return value
+		elif '$or' == key:
+			return " OR ".join(
+				[self.__buildWhereStringFromData(v) for v in value]
+			)
+		elif isinstance(value, (basestring, int, long)):
+			self.__appendLinkedData('params', (key, value))
+			return "%s = %%(%s)s" % (key, key)
+		elif isinstance(value, tuple):
+			relation, realvalue = value
+			if 'in' == relation:
+				for i, v in enumerate(realvalue):
+					self.__appendLinkedData(
+						'params',
+						(
+							'%s_%d' % (key, i),
+							v
+						)
+					)
+				return "%s in %s" % (
+					key,
+					'(' + ','.join(
+						('%%(%s_%d)s' % (key, i) for i, v in enumerate(realvalue))
+					) + ')'
+				)
+			elif relation in ('>', '<', '>=', '<='):
+				self.__appendLinkedData('params', (key, realvalue))
+				return '%s %s %%(%s)s' % (key, relation, key)
+			else:
+				raise ValueError('no such relation: %s' % relation)
 		else:
-			whereString = '1'
-		return whereString
-		
+			raise ValueError(value)
+
+	def __buildWhereStringFromData(self, whereData):
+		if whereData:
+			return "(" + ") AND (".join(
+				[self.__buildWherePart(key, value) for key, value in whereData.iteritems()]
+			) + ")"
+		else:
+			return '1'
+
+	def __buildWhereString(self):
+		return self.__buildWhereStringFromData(
+			self.__getLinkedData('where')
+		)
+
 	def __buildOrderString(self):
 		orderData = self.__getLinkedData('order')
 		if orderData:
