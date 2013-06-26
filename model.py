@@ -131,26 +131,33 @@ class LinkedModel(object):
 		max_value_length = 0
 		for column,value in data.iteritems():
 			columnList.append(column)
-			if not isinstance(value,(list,tuple) ):
-				value = ( value, )
-
-			max_value_length = max( max_value_length, len(value) )
-
-			for i,v in enumerate(value):
-				key = '%s_%d'%(column,i)
-				params[key] = v
+			if isinstance(value,(list,tuple) ):
+				max_value_length = max( max_value_length, len(value) )
+				for i, v in enumerate(value):
+					key = '%s_%d' % (column, i)
+					params[key] = v
+			else:
+				max_value_length = max(max_value_length, 1)
+				params[column] = value
 		
 		# empty
 		if max_value_length <= 0:
 			return
 
 		tableString = self.__db.tablePrefix() + self.__tableName
+
+		def get_column_fields(data, column, i):
+			if isinstance(data[column], (list, tuple)):
+				return '%%(%s_%d)s' % (column, i)
+			else:
+				return '%%(%s)s' % column
+
 		queryString = "insert into %(table)s (%(columns)s) values %(values)s"%{
 			'table' : tableString,
 			'columns' : ','.join(columnList),
 			'values' : ','.join([
 				'( %s )'% ','.join([
-					'%%(%s_%d)s'%(column,i)
+					get_column_fields(data, column, i)
 					for column in columnList
 				])
 				for i in range(0,max_value_length)
