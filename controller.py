@@ -79,7 +79,7 @@ class Controller(object):
 			self.postProcess()
 		except InControllerRedirect as e:
 			path = e.path
-			c = getControllerByPath(path)
+			c = self.runbox().controller(path)
 			c.setCtrlParams(e.argv)
 			return c.run()
 		
