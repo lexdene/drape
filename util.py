@@ -65,3 +65,31 @@ def random_str(length=8, chars=string.ascii_uppercase + string.digits):
 def mkdir_not_existing(path):
 	if not os.path.isdir(path):
 		os.makedirs(path)
+
+
+def tile_list_data(source_list_data):
+	target_data = []
+	for v in source_list_data:
+		target_data.append(_tile_data(v))
+	return target_data
+
+
+def _tile_data(source_data):
+	target_data = {}
+	for key, value in source_data.iteritems():
+		key_parted_list = key.split('.')
+		part_data = target_data
+		initial = key_parted_list[0:-1]
+
+		for key_parted in initial:
+			if not key_parted in part_data:
+				part_data[key_parted] = {}
+			part_data = part_data[key_parted]
+
+		key_parted = key_parted_list[-1]
+		if isinstance(value, dict):
+			part_data[key_parted] = _tile_data(value)
+		else:
+			part_data[key_parted] = value
+
+	return target_data
