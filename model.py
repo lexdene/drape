@@ -73,7 +73,7 @@ class LinkedModel(object):
 		self.__appendLinkedData('group',g)
 		return self
 		
-	def select(self):
+	def select(self, options=[]):
 		fieldString = self.__buildFieldString()
 		tableString = self.__buildTableString()
 		joinString = self.__buildJoinString()
@@ -82,7 +82,8 @@ class LinkedModel(object):
 		limitString = self.__buildLimitString()
 		groupString = self.__buildGroupString()
 		
-		queryString = "select\n%s\nfrom %s\n%s\nwhere %s\n%s\n%s\n%s"%(
+		queryString = "select %s\n%s\nfrom %s\n%s\nwhere %s\n%s\n%s\n%s"%(
+			' '.join(options),
 			fieldString,
 			tableString,
 			joinString,
@@ -196,7 +197,11 @@ class LinkedModel(object):
 		
 		n = self.__db.execute(queryString,dict(paramsData))
 		return n
-		
+
+	def found_rows(self):
+		res = self.__db.queryOne('select FOUND_ROWS()')
+		return res[0]
+
 	def __appendLinkedData(self,name,value):
 		if not name in self.__linkedData:
 			self.__linkedData[name] = list()
