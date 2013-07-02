@@ -8,6 +8,7 @@ class LinkedModel(object):
 	def __init__(self,sTableName):
 		self.__tableName = sTableName
 		self.__db = db.Db()
+		self.__params = None
 		
 		# linked data
 		self.__clearLinkedData()
@@ -92,12 +93,10 @@ class LinkedModel(object):
 			orderString,
 			limitString
 		)
-		
-		paramsData = self.__getLinkedData('params')
-		if paramsData is None:
-			paramsData = list()
+
+		res = self.__db.query(queryString, self.__params)
 		self.__clearLinkedData()
-		return self.__db.query(queryString,dict(paramsData))
+		return res
 		
 	def find(self):
 		res = self.limit(1).select()
@@ -120,12 +119,8 @@ class LinkedModel(object):
 			groupString
 		)
 		
-		paramsData = self.__getLinkedData('params')
-		if paramsData is None:
-			paramsData = list()
+		result = self.__db.queryOne(queryString, self.__params)
 		self.__clearLinkedData()
-
-		result = self.__db.queryOne(queryString,dict(paramsData))
 		return result[0]
 		
 	def insert(self,**data):
@@ -168,10 +163,9 @@ class LinkedModel(object):
 			])
 		}
 
-		self.__clearLinkedData()
-
 		n = self.__db.execute(queryString,params)
 		insert_id = self.__db.insert_id()
+		self.__clearLinkedData()
 		return insert_id
 		
 	def update(self,**data):
@@ -190,12 +184,8 @@ class LinkedModel(object):
 			where = self.__buildWhereString()
 		)
 		
-		paramsData = self.__getLinkedData('params')
-		if paramsData is None:
-			paramsData = list()
+		n = self.__db.execute(queryString, self.__params)
 		self.__clearLinkedData()
-		
-		n = self.__db.execute(queryString,dict(paramsData))
 		return n
 
 	def found_rows(self):
@@ -211,12 +201,13 @@ class LinkedModel(object):
 	def __setLinkedData(self,name,value):
 		self.__linkedData[name] = value
 		
-	def __getLinkedData(self,name):
-		return self.__linkedData.get(name, None)
+	def __getLinkedData(self, name, defaultValue=None):
+		return self.__linkedData.get(name, defaultValue)
 		
 	def __clearLinkedData(self):
 		self.__linkedData = dict()
-		
+		self.__params = dict()
+
 		# default alias
 		self.alias(self.__tableName)
 		
@@ -365,28 +356,28 @@ class LinkedModel(object):
 				[self.__buildWhereStringFromData(v) for v in value]
 			)
 		elif isinstance(value, (basestring, int, long)):
-			self.__appendLinkedData('params', (key, value))
-			return "%s = %%(%s)s" % (key, key)
+			param_key = self.__addParam(key, value)
+			return "%s = %%(%s)s" % (key, param_key)
 		elif isinstance(value, tuple):
 			relation, realvalue = value
 			if 'in' == relation:
+				param_key_list = list()
 				for i, v in enumerate(realvalue):
-					self.__appendLinkedData(
-						'params',
-						(
-							'%s_%d' % (key, i),
-							v
-						)
+					param_key = self.__addParam(
+						'%s_%d' % (key, i),
+						v
 					)
+					param_key_list.append(param_key)
+
 				return "%s in %s" % (
 					key,
 					'(' + ','.join(
-						('%%(%s_%d)s' % (key, i) for i, v in enumerate(realvalue))
+						('%%(%s)s' % param_key for param_key in param_key_list)
 					) + ')'
 				)
 			elif relation in ('>', '<', '>=', '<='):
-				self.__appendLinkedData('params', (key, realvalue))
-				return '%s %s %%(%s)s' % (key, relation, key)
+				param_key = self.__addParam(key, realvalue)
+				return '%s %s %%(%s)s' % (key, relation, param_key)
 			else:
 				raise ValueError('no such relation: %s' % relation)
 		else:
@@ -431,3 +422,21 @@ class LinkedModel(object):
 		else:
 			groupString = ''
 		return groupString
+
+	def __addParam(self, key, value):
+		guess_length = 10
+
+		if key in self.__params:
+			for i in range(guess_length):
+				guess_key = '%s_%d' % (key, i)
+				if not guess_key in self.__params:
+					break
+
+			if guess_length - 1 == i:
+				raise ValueError('can not guess key for %s' % key)
+
+			self.__params[guess_key] = value
+			return guess_key
+		else:
+			self.__params[key] = value
+			return key
