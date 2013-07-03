@@ -124,6 +124,18 @@ class Controller(object):
 	def runbox(self):
 		return self.__runbox
 
+	@classmethod
+	def controller(cls, fun):
+		return type(
+			fun.__name__,
+			(cls, ),
+			{
+				'process': fun,
+				'__module__': fun.__module__
+			}
+		)
+
+
 class jsonController(Controller):
 	def __init__(self,runbox):
 		super(jsonController,self).__init__(runbox)
