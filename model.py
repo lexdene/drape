@@ -173,8 +173,14 @@ class LinkedModel(object):
 		dataStringPartedList = list()
 		for k,v in data.iteritems():
 			if k in self.__getColumnList(self.__tableName):
-				dataStringPartedList.append('%s=%%(%s)s'%(k,k))
-				self.__appendLinkedData('params',(k,v))
+				param_key = self.__addParam(k, v)
+				dataStringPartedList.append(
+					'%s=%%(%s)s' % (
+						param_key,
+						param_key
+					)
+				)
+
 		dataString = ' ,'.join(dataStringPartedList)
 		
 		tableString = self.__db.tablePrefix() + self.__tableName
