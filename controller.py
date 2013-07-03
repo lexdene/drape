@@ -7,23 +7,25 @@ class ControllerError(exceptions.StandardError):
 	pass
 
 class InControllerRedirect(ControllerError):
-	def __init__(self,path,argv):
+	def __init__(self, path, params):
 		super(InControllerRedirect,self).__init__()
 		self.path = path
-		self.argv = argv
+		self.params = params
 
 class PathInvalid(Exception):
 	pass
 
 class Controller(object):
 	def __init__(self,runbox):
+		self.__runbox = runbox
+
+		# path
 		mod = self.__module__.split('.')[-1]
 		cls = self.__class__.__name__
 		self.__path = '/%s/%s'%(mod,cls)
-		
+
+		# vars are for view render
 		self.__vars = dict()
-		self.__runbox = runbox
-		self.__ctrlParams = None
 		
 		self.__templatePath = None
 		self.__render_func = None
@@ -36,12 +38,6 @@ class Controller(object):
 		
 	def variable(self,name):
 		return self.__vars[name]
-		
-	def getVardict(self):
-		return self.__vars
-		
-	def globalVars(self):
-		return self.runbox().variables()
 		
 	def path(self):
 		return self.__path
@@ -80,7 +76,10 @@ class Controller(object):
 		except InControllerRedirect as e:
 			path = e.path
 			c = self.runbox().controller(path)
-			c.setCtrlParams(e.argv)
+			
+			for k, v in e.params.iteritems():
+				c.setVariable(k, v)
+
 			return c.run()
 		
 		if not self.__parent is None:
@@ -105,10 +104,10 @@ class Controller(object):
 		func = x[-1]
 		mod = __import__(mod, globals(), locals(), [""])
 		func = getattr(mod, func)
-		return func(self.templatePath(), self.getVardict())
+		return func(self.templatePath(), self.__vars)
 		
-	def icRedirect(self,path,*argv):
-		raise InControllerRedirect(path,argv)
+	def icRedirect(self, path, params):
+		raise InControllerRedirect(path, params)
 		
 	def params(self):
 		return self.request().params()
@@ -124,15 +123,6 @@ class Controller(object):
 		
 	def runbox(self):
 		return self.__runbox
-		
-	def addHeader(self,key,value):
-		self.response().addHeader(key,value)
-		
-	def setCtrlParams(self,params):
-		self.__ctrlParams = params
-		
-	def ctrlParams(self):
-		return self.__ctrlParams
 
 class jsonController(Controller):
 	def __init__(self,runbox):
