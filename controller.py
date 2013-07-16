@@ -142,4 +142,4 @@ class jsonController(Controller):
 		self.setRenderFunc('drape.render.json')
 		
 		response = self.response()
-		response.setContentType('application/json')
+		response.set_header('Content-Type', 'application/json; charset=utf-8')

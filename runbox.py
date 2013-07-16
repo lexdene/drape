@@ -40,9 +40,6 @@ class RunBox(object):
 		# session
 		if not self.__session is None:
 			self.__session.save()
-
-		# response
-		self.__response.flush()
 		
 	def controller(self,path,**params):
 		def getControllerClsByPath(path):

@@ -31,7 +31,6 @@ class Request(object):
 		
 		# params
 		self.__paramDict = dict()
-		self.__fileDict = dict()
 		
 		# path params
 		for i in range(2,len(x)-1,2):

@@ -1,10 +1,14 @@
-import time,hashlib,re,base64,pickle,exceptions
+import time
+import hashlib
+import re
+import base64
+import pickle
 import os
 
 import config
 import util
 
-class ConfigError(exceptions.StandardError):
+class ConfigError(Exception):
 	pass
 
 class StoreBase(object):
@@ -208,7 +212,9 @@ class Session(object):
 			rand = os.urandom(16)
 			now = time.time()
 			
-			session_id = hashlib.sha1("%s%s%s%s" %(rand, now, ip, secret_key)).hexdigest()
+			session_id = hashlib.sha1(
+				"%s%s%s%s" %(rand, now, ip, secret_key)
+			).hexdigest()
 			if session_id not in self.__store:
 				break
 		return session_id

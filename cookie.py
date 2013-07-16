@@ -68,7 +68,7 @@ class Cookie(object):
 			s += '; Domain=%(domain)s'%cookiedata
 		
 		response = self.__runbox.response()
-		response.addHeader(
+		response.add_header(
 			'Set-Cookie',
 			s,
 		)

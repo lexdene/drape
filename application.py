@@ -12,6 +12,7 @@ import config
 import runbox
 import eventCenter
 import util
+import response
 
 class Application(object):
 	__singleton = None
@@ -76,8 +77,8 @@ class Application(object):
 			
 			# redirect path without postfix '/'
 			if aRequest.REQUEST_URI == aRequest.rootPath():
-				aResponse.setStatus('301 Moved Permanently')
-				aResponse.addHeader('Location', aRequest.rootPath() + '/')
+				aResponse.setStatus(response.REDIRECT)
+				aResponse.set_header('Location', aRequest.rootPath() + '/')
 				return
 			
 			# init controller
@@ -85,12 +86,12 @@ class Application(object):
 			c = aRunBox.controller(path)
 			if c is None:
 				# notfound
-				aResponse.setStatus('404 Not Found')
+				aResponse.setStatus(response.NOT_FOUND)
 
 				path = config.get_value('system/notfound')
 				c = aRunBox.controller(path)
 				if c is None:
-					aResponse.addHeader('Content-Type','text/plain; charset=utf-8')
+					aResponse.set_header('Content-Type','text/plain; charset=utf-8')
 					aResponse.setBody('404 Not Found')
 					return aResponse
 			
@@ -108,7 +109,7 @@ class Application(object):
 				)
 			)
 		except Exception as e:
-			aResponse.addHeader('Content-Type','text/plain; charset=utf-8')
+			aResponse.set_header('Content-Type','text/plain; charset=utf-8')
 			
 			body = ''
 			if 'debug' == config.get_value('system/debug'):
@@ -121,7 +122,7 @@ class Application(object):
 				body = '500 Internal Server Error\n'
 			
 			aResponse.setBody(body)
-			aResponse.setStatus('500 Internal Server Error')
+			aResponse.setStatus(response.ERROR)
 		return aResponse
 		
 	def apptype(self):
@@ -184,7 +185,7 @@ class WsgiApplication(Application):
 		
 		write = start_response(
 			aResponse.status(),
-			aResponse.headers()
+			list(aResponse.headers())
 		)
 		
 		return ret
