@@ -1,5 +1,8 @@
 # 简介
-drape是一个Python语言的web框架。
+drape是一个Python语言的web后台框架。
+
+# 许可证
+GNU GENERAL PUBLIC LICENSE Version 3
 
 # 网站
 http://testdrape.sinaapp.com/
