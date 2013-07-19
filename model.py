@@ -48,8 +48,8 @@ class LinkedModel(object):
 		self.__setLinkedData('where', data)
 		return self
 		
-	def order(self,w):
-		self.__appendLinkedData('order',w)
+	def order(self, field, sequence=None):
+		self.__appendLinkedData('order', (field, sequence))
 		return self
 		
 	def limit(self,length,offset=None):
@@ -83,15 +83,15 @@ class LinkedModel(object):
 		limitString = self.__buildLimitString()
 		groupString = self.__buildGroupString()
 		
-		queryString = "select %s\n%s\nfrom %s\n%s\nwhere %s\n%s\n%s\n%s"%(
-			' '.join(options),
-			fieldString,
-			tableString,
-			joinString,
-			whereString,
-			groupString,
-			orderString,
-			limitString
+		queryString = "select{options}{field}\nfrom {table}{join}{where}{group}{order}{limit}".format(
+			options=' '.join(options),
+			field=fieldString,
+			table=tableString,
+			join=joinString,
+			where=whereString,
+			group=groupString,
+			order=orderString,
+			limit=limitString
 		)
 
 		res = self.__db.query(queryString, self.__params)
@@ -111,7 +111,7 @@ class LinkedModel(object):
 		whereString = self.__buildWhereString()
 		groupString = self.__buildGroupString()
 		
-		queryString = "select count(%s) from %s \n%s \nwhere %s\n%s"%(
+		queryString = "select count(%s) from %s%s%s%s"%(
 			countField,
 			tableString,
 			joinString,
@@ -184,7 +184,7 @@ class LinkedModel(object):
 		dataString = ' ,'.join(dataStringPartedList)
 		
 		tableString = self.__db.tablePrefix() + self.__tableName
-		queryString = "update %(table)s set %(data)s where %(where)s"%dict(
+		queryString = "update %(table)s set %(data)s %(where)s" % dict(
 			table = tableString,
 			data = dataString,
 			where = self.__buildWhereString()
@@ -282,7 +282,7 @@ class LinkedModel(object):
 			if fieldData:
 				fieldList.extend( self.__buildFieldListByFieldData( fieldData ) )
 			
-		fieldString = ',\n'.join(fieldList)
+		fieldString = '\n' + ',\n'.join(fieldList)
 		return fieldString
 		
 	def __buildFieldListByFieldData(self,fieldData):
@@ -351,7 +351,9 @@ class LinkedModel(object):
 				if join['on']:
 					joinStringParted = joinStringParted + ' on (%s)'%join['on']
 				joinStringPartedList.append( joinStringParted )
-		joinString = " \n".join( joinStringPartedList )
+			joinString = "\n" + "\n".join( joinStringPartedList )
+		else:
+			joinString = ''
 		return joinString
 
 	def __buildWherePart(self, key, value):
@@ -395,17 +397,24 @@ class LinkedModel(object):
 				[self.__buildWherePart(key, value) for key, value in whereData.iteritems()]
 			) + ")"
 		else:
-			return '1'
+			return ''
 
 	def __buildWhereString(self):
-		return self.__buildWhereStringFromData(
+		ret = self.__buildWhereStringFromData(
 			self.__getLinkedData('where')
 		)
+		if ret:
+			return '\nwhere ' + ret
+		else:
+			return ''
 
 	def __buildOrderString(self):
 		orderData = self.__getLinkedData('order')
 		if orderData:
-			orderString = "order by "+','.join( orderData )
+			orderString = "\norder by "+','.join([
+				"%s %s" % (field, sequence) if sequence else field
+				for field, sequence in orderData
+			])
 		else:
 			orderString = ''
 		return orderString
@@ -414,9 +423,12 @@ class LinkedModel(object):
 		limitData = self.__getLinkedData('limit')
 		if limitData:
 			if limitData['offset'] is None:
-				limitString = 'limit %s'%limitData['length']
+				limitString = '\nlimit %s' % limitData['length']
 			else:
-				limitString = 'limit %s,%s'%(limitData['offset'],limitData['length'])
+				limitString = '\nlimit %s,%s' % (
+					limitData['offset'],
+					limitData['length']
+				)
 		else:
 			limitString = ''
 		return limitString
@@ -424,7 +436,7 @@ class LinkedModel(object):
 	def __buildGroupString(self):
 		groupData = self.__getLinkedData('group')
 		if groupData:
-			groupString = 'group by '+','.join( groupData )
+			groupString = '\ngroup by ' + ','.join(groupData)
 		else:
 			groupString = ''
 		return groupString
