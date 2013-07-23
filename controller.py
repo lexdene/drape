@@ -106,7 +106,7 @@ class Controller(object):
 		func = getattr(mod, func)
 		return func(self.templatePath(), self.__vars)
 		
-	def icRedirect(self, path, params):
+	def icRedirect(self, path, params={}):
 		raise InControllerRedirect(path, params)
 		
 	def params(self):
