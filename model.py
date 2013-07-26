@@ -84,7 +84,7 @@ class LinkedModel(object):
 		groupString = self.__buildGroupString()
 		
 		queryString = "select{options}{field}\nfrom {table}{join}{where}{group}{order}{limit}".format(
-			options=' '.join(options),
+			options=' ' + ' '.join(options) if options else '',
 			field=fieldString,
 			table=tableString,
 			join=joinString,
