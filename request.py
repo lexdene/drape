@@ -46,14 +46,24 @@ class Request(object):
 		)
 		for key in self.__field_storage:
 			value = self.__field_storage[key]
-			# get last in list
-			if isinstance(value,list):
-				value = value[-1]
-			# file or string
-			if value.filename is None:
-				self.__paramDict[key] = value.value
+			if key[-2:] == '[]':
+				real_key = key[:-2]
+				if isinstance(value, list):
+					self.__paramDict[real_key] = [
+						v.value if v.filename is None else v
+						for v in value
+					]
+				else:
+					v = value.value if value.filename is None else value
+					self.__paramDict[real_key] = [v]
 			else:
-				self.__paramDict[key] = value
+				if isinstance(value, list):
+					value = value[-1]
+				# file or string
+				if value.filename is None:
+					self.__paramDict[key] = value.value
+				else:
+					self.__paramDict[key] = value
 		
 	def __getattr__(self,key):
 		return self.__env.get(key,None)

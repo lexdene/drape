@@ -58,3 +58,17 @@ class Db(object):
 		
 	def insert_id(self):
 		return self.__conn.insert_id()
+
+# mysql> show variables like 'autocommit';
+# +---------------+-------+
+# | Variable_name | Value |
+# +---------------+-------+
+# | autocommit    | ON    |
+# +---------------+-------+
+# 1 row in set (0.00 sec)
+
+# mysql> set autocommit = 0;
+# Query OK, 0 rows affected (0.00 sec)
+
+# mysql> set autocommit = 1;
+# Query OK, 0 rows affected (0.00 sec)
