@@ -15,7 +15,7 @@ __config__ = {
         'user': '',
         'password': '',
         'host': 'localhost',
-        'port': 1433,
+        'port': 3306,
         'charset': 'utf8',
         'tablePrefix': '',
         'log_sql': True,

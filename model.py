@@ -7,7 +7,7 @@ class LinkedModel(object):
 
 	def __init__(self,sTableName):
 		self.__tableName = sTableName
-		self.__db = db.Db()
+		self.__db = db.Db.singleton()
 		self.__params = None
 		
 		# linked data
@@ -119,7 +119,12 @@ class LinkedModel(object):
 			groupString
 		)
 		
-		result = self.__db.queryOne(queryString, self.__params)
+		result = self.__db.query(
+			queryString,
+			self.__params,
+			fetchone=True,
+			bydict=False
+		)
 		self.__clearLinkedData()
 		return result[0]
 		
@@ -143,7 +148,7 @@ class LinkedModel(object):
 		if max_value_length <= 0:
 			return
 
-		tableString = self.__db.tablePrefix() + self.__tableName
+		tableString = self.__db.table_prefix() + self.__tableName
 
 		def get_column_fields(data, column, i):
 			if isinstance(data[column], (list, tuple)):
@@ -163,10 +168,9 @@ class LinkedModel(object):
 			])
 		}
 
-		n = self.__db.execute(queryString,params)
-		insert_id = self.__db.insert_id()
+		result = self.__db.execute(queryString, params)
 		self.__clearLinkedData()
-		return insert_id
+		return result['last_insert_id']
 		
 	def update(self,**data):
 		dataString = ''
@@ -183,19 +187,23 @@ class LinkedModel(object):
 
 		dataString = ' ,'.join(dataStringPartedList)
 		
-		tableString = self.__db.tablePrefix() + self.__tableName
+		tableString = self.__db.table_prefix() + self.__tableName
 		queryString = "update %(table)s set %(data)s %(where)s" % dict(
 			table = tableString,
 			data = dataString,
 			where = self.__buildWhereString()
 		)
 		
-		n = self.__db.execute(queryString, self.__params)
+		result = self.__db.execute(queryString, self.__params)
 		self.__clearLinkedData()
-		return n
+		return result['row_count']
 
 	def found_rows(self):
-		res = self.__db.queryOne('select FOUND_ROWS()')
+		res = self.__db.query(
+			'select FOUND_ROWS()',
+			fetchone=True,
+			bydict=False
+		)
 		return res[0]
 
 	def __appendLinkedData(self,name,value):
@@ -234,7 +242,7 @@ class LinkedModel(object):
 		
 		if not tableName in self.__cache['showColumns']:
 			aIter = self.__db.query("SHOW COLUMNS FROM `%s%s`"%(
-				self.__db.tablePrefix(),
+				self.__db.table_prefix(),
 				tableName
 			))
 			columnList = list()
@@ -328,7 +336,7 @@ class LinkedModel(object):
 		
 	def __buildTableString(self):
 		aliasData = self.__getLinkedData('alias')
-		tableName = self.__db.tablePrefix() + self.__tableName
+		tableName = self.__db.table_prefix() + self.__tableName
 		if aliasData:
 			tableString = '`%s` as %s'%(tableName,aliasData)
 		else:
@@ -339,12 +347,12 @@ class LinkedModel(object):
 	def __buildJoinString(self):
 		joinStringPartedList = list()
 		joinData = self.__getLinkedData('join')
-		tablePrefix = self.__db.tablePrefix()
+		table_prefix = self.__db.table_prefix()
 		if joinData:
 			for join in joinData:
 				joinStringParted = '%s join `%s`'%(
 					join['jointype'],
-					tablePrefix+join['jointable'],
+					table_prefix+join['jointable'],
 				)
 				if join['alias']:
 					joinStringParted = joinStringParted + ' as %s'%join['alias']
