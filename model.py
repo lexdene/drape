@@ -27,7 +27,7 @@ class LinkedModel(object):
 		None/'auto' : 如果有field参数，则不反射；如果没有field参数，则反射
 		list() : 仅反射列表中指定的表，表名必须使用alias name
 		
-		默认为None
+		默认为True
 		'''
 		self.__setLinkedData('reflectField',r)
 		return self
@@ -267,11 +267,10 @@ class LinkedModel(object):
 		return tableAliasList
 		
 	def __buildFieldString(self):
-		reflectFieldData = self.__getLinkedData('reflectField')
+		reflectFieldData = self.__getLinkedData('reflectField', True)
 		fieldData = self.__getLinkedData('field')
 		
-		if reflectFieldData is None \
-			or reflectFieldData == 'auto':
+		if reflectFieldData == 'auto':
 			if fieldData:
 				fieldList = self.__buildFieldListByFieldData( fieldData )
 			else:
