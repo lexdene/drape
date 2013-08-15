@@ -310,13 +310,17 @@ class LinkedModel(object):
 	def __buildFieldListByColumn(self,tableAliasList=None):
 		# table alias
 		AllTableAliasList = self.__getTableAliasList()
-		
+		table_alias_name = self.__getLinkedData(
+			'alias',
+			self.__tableName
+		)
+
 		# build field
 		fieldStringPartedList = list()
 		for tableName , aliasName in AllTableAliasList:
 			if tableAliasList is None or aliasName in tableAliasList:
 				for columnName in self.__getColumnList(tableName):
-					if tableName == self.__tableName :
+					if aliasName == table_alias_name:
 						fieldStringParted = '`%s`.`%s`'%(
 							aliasName,
 							columnName
