@@ -98,6 +98,11 @@ class LinkedModel(object):
 		self.__clearLinkedData()
 		return res
 		
+	def select_and_count(self):
+		res = self.select(['SQL_CALC_FOUND_ROWS'])
+		count = self.found_rows()
+		return res, count
+
 	def find(self):
 		res = self.limit(1).select()
 		if len(res) < 1:
