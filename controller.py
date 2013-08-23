@@ -45,7 +45,7 @@ class Controller(object):
 	def setTemplatePath(self,templatePath):
 		self.__templatePath = templatePath
 		
-	def templatePath(self):
+	def __get_template_path(self):
 		if self.__templatePath:
 			return self.__templatePath
 		else:
@@ -63,12 +63,9 @@ class Controller(object):
 			parent = self.runbox().controller(parent)
 		self.__parent = parent
 		
-	def children(self):
-		return self.__children.iteritems()
-		
 	def run(self):
-		for name,aCtrl in self.children():
-			self.setVariable(name,aCtrl.render())
+		for name, ctrl in self.__children.iteritems():
+			self.setVariable(name, ctrl.render())
 		
 		try:
 			self.process()
@@ -104,22 +101,16 @@ class Controller(object):
 		func = x[-1]
 		mod = __import__(mod, globals(), locals(), [""])
 		func = getattr(mod, func)
-		return func(self.templatePath(), self.__vars)
+		return func(self.__get_template_path(), self.__vars)
 		
 	def icRedirect(self, path, params={}):
 		raise InControllerRedirect(path, params)
 		
 	def params(self):
-		return self.request().params()
+		return self.runbox().request().params()
 		
 	def session(self):
 		return self.runbox().session()
-		
-	def request(self):
-		return self.runbox().request()
-		
-	def response(self):
-		return self.runbox().response()
 		
 	def runbox(self):
 		return self.__runbox
@@ -141,5 +132,5 @@ class jsonController(Controller):
 		super(jsonController,self).__init__(runbox)
 		self.setRenderFunc('drape.render.json')
 		
-		response = self.response()
+		response = self.runbox().response()
 		response.set_header('Content-Type', 'application/json; charset=utf-8')
