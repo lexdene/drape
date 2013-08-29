@@ -1,136 +1,158 @@
-import json
-import exceptions
+# -*- coding: utf-8 -*-
+''' 控制器相关模块 '''
+from functools import wraps
 
-import config
+from . import config, render
 
-class ControllerError(exceptions.StandardError):
-	pass
-
-class InControllerRedirect(ControllerError):
-	def __init__(self, path, params):
-		super(InControllerRedirect,self).__init__()
-		self.path = path
-		self.params = params
-
-class PathInvalid(Exception):
-	pass
 
 class Controller(object):
-	def __init__(self,runbox):
-		self.__runbox = runbox
+    ''' 控制器的基类 '''
+    def __init__(self, runbox):
+        self.__runbox = runbox
 
-		# path
-		mod = self.__module__.split('.')[-1]
-		cls = self.__class__.__name__
-		self.__path = '/%s/%s'%(mod,cls)
+        # path
+        mod = self.__module__.split('.')[-1]
+        cls = self.__class__.__name__
+        self.__path = '/%s/%s' % (mod, cls)
 
-		# vars are for view render
-		self.__vars = dict()
-		
-		self.__templatePath = None
-		self.__render_func = None
-		
-		self.__children = dict()
-		self.__parent = None
-		
-	def setVariable(self,name,value):
-		self.__vars[name] = value
-		
-	def variable(self,name):
-		return self.__vars[name]
-		
-	def path(self):
-		return self.__path
-		
-	def setTemplatePath(self,templatePath):
-		self.__templatePath = templatePath
-		
-	def __get_template_path(self):
-		if self.__templatePath:
-			return self.__templatePath
-		else:
-			return self.__path
-		
-	def setRenderFunc(self,render_func):
-		self.__render_func = render_func
-		
-	def addChild(self,name,aChildCtrl):
-		self.__children[name] = aChildCtrl
-		aChildCtrl.setParent(self)
-		
-	def setParent(self,parent):
-		if isinstance(parent,str):
-			parent = self.runbox().controller(parent)
-		self.__parent = parent
-		
-	def run(self):
-		for name, ctrl in self.__children.iteritems():
-			self.setVariable(name, ctrl.render())
-		
-		try:
-			self.process()
-			self.postProcess()
-		except InControllerRedirect as e:
-			path = e.path
-			c = self.runbox().controller(path)
-			
-			for k, v in e.params.iteritems():
-				c.setVariable(k, v)
+        # vars are for view render
+        self.__vars = dict()
 
-			return c.run()
-		
-		if not self.__parent is None:
-			self.__parent.addChild('body',self)
-			return self.__parent.run()
-		
-		return self.render()
-		
-	def postProcess(self):
-		pass
-		
-	def process(self):
-		pass
-		
-	def render(self):
-		if self.__render_func is None:
-			render_func = config.get_value('view/render_func')
-		else:
-			render_func = self.__render_func
-		x = render_func.split('.')
-		mod = '.'.join(x[0:-1])
-		func = x[-1]
-		mod = __import__(mod, globals(), locals(), [""])
-		func = getattr(mod, func)
-		return func(self.__get_template_path(), self.__vars)
-		
-	def icRedirect(self, path, params={}):
-		raise InControllerRedirect(path, params)
-		
-	def params(self):
-		return self.runbox().request().params()
-		
-	def session(self):
-		return self.runbox().session()
-		
-	def runbox(self):
-		return self.__runbox
+        self.__template_path = None
+        self.__render_func = None
 
-	@classmethod
-	def controller(cls, fun):
-		return type(
-			fun.__name__,
-			(cls, ),
-			{
-				'process': fun,
-				'__module__': fun.__module__
-			}
-		)
+        self.__parent = None
+
+    def set_variable(self, name, value):
+        ''' 设置模板变量 '''
+        self.__vars[name] = value
+
+    def path(self):
+        ''' 获取当前控制器的path '''
+        return self.__path
+
+    def _set_template_path(self, template_path):
+        ''' 设置模板文件路径 '''
+        self.__template_path = template_path
+
+    def __get_template_path(self):
+        '''
+            获取模板文件路径
+            如果未设置过，默认与path相同
+        '''
+        if self.__template_path:
+            return self.__template_path
+        else:
+            return self.__path
+
+    def _set_parent(self, parent):
+        ''' 设置父控制器 '''
+        if isinstance(parent, str):
+            parent = self.__runbox.controller(parent)
+        self.__parent = parent
+
+    def run(self):
+        ''' 执行控制器 '''
+        self.process()
+
+        render_result = self.render(
+            self.__get_template_path(),
+            self.__vars
+        )
+        if not self.__parent is None:
+            self.__parent.set_variable('body', render_result)
+            return self.__parent.run()
+        else:
+            return render_result
+
+    def process(self):
+        ''' 处理请求 '''
+        pass
+
+    def render(self, template_path, variables):
+        ''' 渲染模板 '''
+        if self.__render_func is None:
+            template = config.get_value('view/default_templator')
+            render_func_map = {
+                'jinja2': render.jinja2,
+                'mako': render.mako
+            }
+            self.__render_func = render_func_map[template]
+
+        return self.__render_func(
+            template_path,
+            variables
+        )
+
+    def runbox(self):
+        ''' 执行包 '''
+        return self.__runbox
+
+    def request(self):
+        ''' 请求对象 '''
+        return self.__runbox.request()
+
+    def response(self):
+        ''' 响应对象 '''
+        return self.__runbox.response()
+
+    def session(self):
+        ''' 会话对象 '''
+        return self.__runbox.session()
+
+    def params(self):
+        ''' 请求参数 '''
+        return self.request().params()
+
+    @classmethod
+    def controller(cls, fun):
+        ''' 将一个process函数转成一个控制器类 '''
+        return type(
+            fun.__name__,
+            (cls, ),
+            {
+                'process': fun,
+                '__module__': fun.__module__
+            }
+        )
 
 
-class jsonController(Controller):
-	def __init__(self,runbox):
-		super(jsonController,self).__init__(runbox)
-		self.setRenderFunc('drape.render.json')
-		
-		response = self.runbox().response()
-		response.set_header('Content-Type', 'application/json; charset=utf-8')
+class JsonController(Controller):
+    ''' 返回json的控制器 '''
+    def __init__(self, runbox):
+        super(JsonController, self).__init__(runbox)
+
+        response_obj = self.response()
+        response_obj.set_header(
+            'Content-Type',
+            'application/json; charset=utf-8'
+        )
+
+    def render(self, template_path, variables):
+        return render.json(
+            template_path,
+            variables
+        )
+
+
+class ControllerException(Exception):
+    ''' 所有控制器异常的基类 '''
+    pass
+
+
+class NotAllowed(ControllerException):
+    ''' 405 Method Not Allowed '''
+    pass
+
+
+def post_only(func):
+    ''' 只接受POST请求 '''
+    @wraps(func)
+    def new_func(self):
+        ''' 检查 request method 是不是post '''
+        method = self.runbox().request().REQUEST_METHOD
+        if method == 'POST':
+            func(self)
+        else:
+            raise NotAllowed
+    return new_func

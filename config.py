@@ -28,7 +28,7 @@ __config__ = {
         'secret_key': util.md5sum('drape_web_framework'),
     },
     'view': {
-        'render_func': 'drape.render.jinja2',
+        'default_templator': 'jinja2',
     },
     'sae_storage': {
         'domain_name': 'storage'

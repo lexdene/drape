@@ -77,7 +77,7 @@ class Application(object):
 			
 			# redirect path without postfix '/'
 			if aRequest.REQUEST_URI == aRequest.rootPath():
-				aResponse.setStatus(response.REDIRECT)
+				aResponse.set_status(response.REDIRECT)
 				aResponse.set_header('Location', aRequest.rootPath() + '/')
 				return
 			
@@ -86,18 +86,27 @@ class Application(object):
 			c = aRunBox.controller(path)
 			if c is None:
 				# notfound
-				aResponse.setStatus(response.NOT_FOUND)
+				aResponse.set_status(response.NOT_FOUND)
 
 				path = config.get_value('system/notfound')
 				c = aRunBox.controller(path)
 				if c is None:
 					aResponse.set_header('Content-Type','text/plain; charset=utf-8')
-					aResponse.setBody('404 Not Found')
+					aResponse.set_body('404 Not Found')
 					return aResponse
 			
 			# response
-			aResponse.setBody(c.run())
-			
+			try:
+				run_result = c.run()
+				aResponse.set_body(run_result)
+			except controller.NotAllowed:
+				aResponse.set_status(response.NOT_ALLOWED)
+				aResponse.set_header(
+					'Content-Type',
+					'text/plain; charset=utf-8'
+				)
+				aResponse.set_body(response.NOT_ALLOWED)
+
 			# flush
 			aRunBox.flush()
 			
@@ -119,10 +128,10 @@ class Application(object):
 				for k,v in environ.iteritems():
 					body += "%s => %s\n"%(k,v)
 			else:
-				body = '500 Internal Server Error\n'
+				body = response.ERROR
 			
-			aResponse.setBody(body)
-			aResponse.setStatus(response.ERROR)
+			aResponse.set_body(body)
+			aResponse.set_status(response.ERROR)
 		return aResponse
 		
 	def apptype(self):
