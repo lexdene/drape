@@ -106,6 +106,13 @@ class Application(object):
 					'text/plain; charset=utf-8'
 				)
 				aResponse.set_body(response.NOT_ALLOWED)
+			except controller.Forbidden:
+				aResponse.set_status(response.FORBIDDEN)
+				aResponse.set_header(
+					'Content-Type',
+					'text/plain; charset=utf-8'
+				)
+				aResponse.set_body(response.FORBIDDEN)
 
 			# flush
 			aRunBox.flush()

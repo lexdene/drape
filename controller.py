@@ -145,6 +145,10 @@ class NotAllowed(ControllerException):
     pass
 
 
+class Forbidden(ControllerException):
+    ''' 403 Forbidden '''
+    pass
+
 def post_only(func):
     ''' 只接受POST请求 '''
     @wraps(func)

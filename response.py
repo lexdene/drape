@@ -3,6 +3,7 @@
 
 OK = '200 OK'
 REDIRECT = '301 Moved Permanently'
+FORBIDDEN = '403 Forbidden'
 NOT_FOUND = '404 Not Found'
 NOT_ALLOWED = '405 Method Not Allowed'
 ERROR = '500 Internal Server Error'
