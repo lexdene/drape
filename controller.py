@@ -2,7 +2,7 @@
 ''' 控制器相关模块 '''
 from functools import wraps
 
-from . import config, render
+from . import config, render, response
 
 
 class Controller(object):
@@ -135,19 +135,32 @@ class JsonController(Controller):
         )
 
 
-class ControllerException(Exception):
-    ''' 所有控制器异常的基类 '''
-    pass
+class HTTPError(Exception):
+    ''' 所有http错误的基类 '''
+    def __init__(self, http_code):
+        self.__code = http_code
+        self.__desc = response.get_desc_by_code(http_code)
+
+    @property
+    def code(self):
+        return self.__code
+
+    @property
+    def description(self):
+        return self.__desc
 
 
-class NotAllowed(ControllerException):
+class NotAllowed(HTTPError):
     ''' 405 Method Not Allowed '''
-    pass
+    def __init__(self):
+        super(NotAllowed, self).__init__(405)
 
 
-class Forbidden(ControllerException):
+class Forbidden(HTTPError):
     ''' 403 Forbidden '''
-    pass
+    def __init__(self):
+        super(Forbidden, self).__init__(403)
+
 
 def post_only(func):
     ''' 只接受POST请求 '''

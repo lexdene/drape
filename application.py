@@ -99,20 +99,13 @@ class Application(object):
 			try:
 				run_result = c.run()
 				aResponse.set_body(run_result)
-			except controller.NotAllowed:
-				aResponse.set_status(response.NOT_ALLOWED)
+			except controller.HTTPError as http_error:
+				aResponse.set_status(http_error.description)
 				aResponse.set_header(
 					'Content-Type',
 					'text/plain; charset=utf-8'
 				)
-				aResponse.set_body(response.NOT_ALLOWED)
-			except controller.Forbidden:
-				aResponse.set_status(response.FORBIDDEN)
-				aResponse.set_header(
-					'Content-Type',
-					'text/plain; charset=utf-8'
-				)
-				aResponse.set_body(response.FORBIDDEN)
+				aResponse.set_body(http_error.description)
 
 			# flush
 			aRunBox.flush()

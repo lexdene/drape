@@ -9,6 +9,19 @@ NOT_ALLOWED = '405 Method Not Allowed'
 ERROR = '500 Internal Server Error'
 
 
+def get_desc_by_code(status_code):
+    ''' 通过http状态码获取描述信息 '''
+    desc_map = {
+        200: OK,
+        301: REDIRECT,
+        403: FORBIDDEN,
+        404: NOT_FOUND,
+        405: NOT_ALLOWED,
+        500: ERROR,
+    }
+    return desc_map[status_code]
+
+
 class Response(object):
     ''' 响应对象 '''
     def __init__(self):
