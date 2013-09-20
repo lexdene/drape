@@ -44,20 +44,23 @@ class RunBox(object):
 	def controller(self,path,**params):
 		def getControllerClsByPath(path):
 			x = path.split('/')
-			mod = x[1]
-			cls = x[2]
+			mod = x[0]
+			cls = x[1]
 
 			# default mod if empty
 			if '' == mod:
 				mod = config.get_value('system/default_mod')
 
-			mod = 'app.controller.%s'%mod
+			full_mod_name = 'app.controller.%s'%mod
 
 			# import module
 			try:
-				mod = __import__(mod, globals(), locals(), [""])
-			except ImportError:
-				return None
+				mod = __import__(full_mod_name, globals(), locals(), [""])
+			except ImportError as e:
+				if e.args[0] == 'No module named %s' % mod:
+					return None
+				else:
+					raise
 
 			# default cls if empty
 			if '' == cls:

@@ -5,7 +5,7 @@ from . import util
 __config__ = {
     'system': {
         'debug': 'debug',
-        'notfound': '/notfound/Index',
+        'notfound': 'notfound/Index',
         'default_mod': 'index',
         'default_cls': 'Index',
     },

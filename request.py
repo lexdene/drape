@@ -27,7 +27,7 @@ class Request(object):
 		mod = list_get(x,0,'')
 		cls = list_get(x,1,'')
 		
-		self.__controllerPath = '/%s/%s'%(mod,cls)
+		self.__controllerPath = '%s/%s'%(mod,cls)
 		
 		# params
 		self.__paramDict = dict()

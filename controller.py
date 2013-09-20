@@ -13,7 +13,7 @@ class Controller(object):
         # path
         mod = self.__module__.split('.')[-1]
         cls = self.__class__.__name__
-        self.__path = '/%s/%s' % (mod, cls)
+        self.__path = '%s/%s' % (mod, cls)
 
         # vars are for view render
         self.__vars = dict()
