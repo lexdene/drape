@@ -79,7 +79,7 @@ class Application(object):
 			if aRequest.REQUEST_URI == aRequest.rootPath():
 				aResponse.set_status(response.REDIRECT)
 				aResponse.set_header('Location', aRequest.rootPath() + '/')
-				return
+				return aResponse
 			
 			# init controller
 			path = aRequest.controllerPath()
