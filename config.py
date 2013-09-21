@@ -1,57 +1,28 @@
 ''' default config for drape '''
 
-from . import util
 
-__config__ = {
-    'system': {
-        'debug': 'debug',
-        'notfound': 'notfound/Index',
-        'default_mod': 'index',
-        'default_cls': 'Index',
-    },
-    'db': {
-        'driver': 'mysql',
-        'dbname': '',
-        'user': '',
-        'password': '',
-        'host': 'localhost',
-        'port': 3306,
-        'charset': 'utf8',
-        'tablePrefix': '',
-        'log_sql': True,
-    },
-    'session': {
-        'store_type': 'file',
-        'file_directory': 'data/session',
-        'cookie_name': 'drape_session_id',
-        'timeout': 10 * 24 * 3600,
-        'secret_key': util.md5sum('drape_web_framework'),
-    },
-    'view': {
-        'default_templator': 'jinja2',
-    },
-    'sae_storage': {
-        'domain_name': 'storage'
-    }
-}
+SYSTEM_IS_DEBUG = True
+NOTFOUND_PAGE = 'notfound/Index'
+DEFAULT_MOD = 'index'
+DEFAULT_CLASS = 'Index'
+
+DB_DRIVER = 'mysql'
+DB_NAME = ''
+DB_USER = ''
+DB_PASSWORD = ''
+DB_HOST = 'localhost'
+DB_PORT = 3306
+DB_CHARSET = 'utf8'
+DB_TABLE_PREFIX = ''
+DB_LOG_SQL = True
+
+DEFAULT_TEMPLATOR = 'jinja2'
+
+SESSION_STORE_ENGINE = 'file'
+SESSION_FILE_DIRECTORY = 'data/session'
+SESSION_COOKIE_NAME = 'drape_session_id'
+SESSION_TIMEOUT = 10 * 24 * 3600
+SESSION_SECRET_KEY = 'drape_web_framework'
 
 
-def _update(newconfig):
-    ''' update new config into config '''
-    util.deepmerge(__config__, newconfig)
-
-
-def include(new_config_module):
-    ''' update config module into config '''
-    _update(new_config_module.CONFIG)
-
-
-def get_value(path):
-    '''
-        get config value by path
-    '''
-    path_split = path.split('/')
-    config_item = __config__
-    for path_part in path_split:
-        config_item = config_item.get(path_part, {})
-    return config_item
+from app.config.config import *

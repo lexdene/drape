@@ -13,29 +13,22 @@ class ConfigError(Exception):
 
 class StoreBase(object):
 	@classmethod
-	def create(cls,session_config):
-		store_type = session_config['store_type']
-		store_cls = None
-		if 'file' == store_type:
-			store_cls = FileStore
-		elif 'memcache' == store_type:
-			store_cls = MemStore
-		
+	def create(cls, store_engine):
+		store_class_map = {
+			'file': FileStore,
+			'memcache': MemStore
+		}
+		store_cls = store_class_map.get(store_engine)
+
 		if store_cls is None:
 			raise ConfigError('no such store type:%s'%store_type)
 		
-		s = store_cls(session_config)
+		s = store_cls()
 		
 		# cleanup
 		s.cleanup()
 		
 		return s
-		
-	def __init__(self,config):
-		self.__config = config
-		
-	def config(self):
-		return self.__config
 		
 	def get(self,key,value=None):
 		if key in self:
@@ -57,7 +50,7 @@ class StoreBase(object):
 
 class FileStore(StoreBase):
 	def get(self,key,value=None):
-		directory = self.config()['file_directory']
+		directory = config.SESSION_FILE_DIRECTORY
 		path = '%s/%s'%(directory,key)
 		if not os.path.isfile(path):
 			return value
@@ -68,7 +61,7 @@ class FileStore(StoreBase):
 		return c
 		
 	def __setitem__(self, key, value):
-		directory = self.config()['file_directory']
+		directory = config.SESSION_FILE_DIRECTORY
 		util.mkdir_not_existing( directory )
 		
 		path = '%s/%s'%(directory,key)
@@ -77,13 +70,13 @@ class FileStore(StoreBase):
 		fout.close()
 		
 	def __contains__(self,key):
-		directory = self.config()['file_directory']
+		directory = config.SESSION_FILE_DIRECTORY
 		path = '%s/%s'%(directory,key)
 		return os.path.isfile(path)
 		
 	def cleanup(self):
-		directory = self.config()['file_directory']
-		timeout = self.config()['timeout']
+		directory = config.SESSION_FILE_DIRECTORY
+		timeout = config.SESSION_TIMEOUT
 		now = time.time()
 		
 		if not os.path.isdir(directory):
@@ -95,8 +88,8 @@ class FileStore(StoreBase):
 				os.remove(path)
 
 class MemStore(StoreBase):
-	def __init__(self,config):
-		super(MemStore,self).__init__(config)
+	def __init__(self):
+		super(MemStore, self).__init__()
 		import pylibmc
 		self.mc = pylibmc.Client()
 		
@@ -114,7 +107,11 @@ class MemStore(StoreBase):
 		
 	def __setitem__(self, key, value):
 		s = self.mc.get(key)
-		self.mc.set( key, value, self.config()['timeout'] )
+		self.mc.set(
+			key,
+			value,
+			config.SESSION_TIMEOUT
+		)
 		
 	def __delitem__(self, key):
 		self.mc.delete(key)
@@ -129,10 +126,10 @@ class Session(object):
 		self.__data = dict()
 		
 	def run(self):
-		cookie_name = config.get_value('session/cookie_name')
+		cookie_name = config.SESSION_COOKIE_NAME
 		aCookie = self.__runbox.cookie()
 		aRequest = self.__runbox.request()
-		self.__store = StoreBase.create(config.get_value('session'))
+		self.__store = StoreBase.create(config.SESSION_STORE_ENGINE)
 		
 		# read session id from cookie
 		self.__session_id = aCookie.get(cookie_name)
@@ -147,7 +144,7 @@ class Session(object):
 			if rawdata is None:
 				self.__initData(
 					aRequest.REMOTE_ADDR,
-					config.get_value('session/timeout')
+					config.SESSION_TIMEOUT
 				)
 			else:
 				self.__data = self.__decodeData(rawdata)
@@ -158,23 +155,23 @@ class Session(object):
 					or time.time() > self.get('_expired'):
 				self.__initData(
 					aRequest.REMOTE_ADDR,
-					config.get_value('session/timeout')
+					config.SESSION_TIMEOUT
 				)
 			
 		# recreate session_id
 		if self.__session_id is None:
 			self.__session_id = self.__recreate_session_id(
 				aRequest.REMOTE_ADDR,
-				config.get_value('session/secret_key')
+				config.SESSION_SECRET_KEY
 			)
 			aCookie.add(cookie_name,self.__session_id)
 			self.__initData(
 				aRequest.REMOTE_ADDR,
-				config.get_value('session/timeout')
+				config.SESSION_TIMEOUT
 			)
 		
 	def setCookieAttr(self, path='/', expired=None, domain=None ):
-		cookie_name = config.get_value('session/cookie_name')
+		cookie_name = config.SESSION_COOKIE_NAME
 		aCookie = self.__runbox.cookie()
 		aCookie.add(cookie_name, self.__session_id, path, expired, domain)
 		

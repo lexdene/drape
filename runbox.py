@@ -49,7 +49,7 @@ class RunBox(object):
 
 			# default mod if empty
 			if '' == mod:
-				mod = config.get_value('system/default_mod')
+				mod = config.DEFAULT_MOD
 
 			full_mod_name = 'app.controller.%s'%mod
 
@@ -67,7 +67,7 @@ class RunBox(object):
 				cls = getattr(
 					mod,
 					'DEFAULT_CLS',
-					config.get_value('system/default_cls')
+					config.DEFAULT_CLASS
 				)
 
 			# get class

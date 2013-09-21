@@ -72,7 +72,7 @@ class Controller(object):
     def render(self, template_path, variables):
         ''' 渲染模板 '''
         if self.__render_func is None:
-            template = config.get_value('view/default_templator')
+            template = config.DEFAULT_TEMPLATOR
             render_func_map = {
                 'jinja2': render.jinja2,
                 'mako': render.mako

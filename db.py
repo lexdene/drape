@@ -9,22 +9,22 @@ from . import config, debug
 class Db(object):
     ''' db对象 '''
     def __init__(self):
-        dbconfig = config.get_value('db')
-        self.__config = dbconfig
-        if dbconfig['driver'] == 'mysql':
+        if config.DB_DRIVER == 'mysql':
             import mysql.connector
             self.__driver = mysql.connector
 
             self.__conn = self.__driver.connect(
-                host=dbconfig['host'],
-                port=int(dbconfig['port']),
-                user=dbconfig['user'],
-                password=dbconfig['password'],
-                database=dbconfig['dbname'],
-                charset=dbconfig['charset'],
+                host=config.DB_HOST,
+                port=int(config.DB_PORT),
+                user=config.DB_USER,
+                password=config.DB_PASSWORD,
+                database=config.DB_NAME,
+                charset=config.DB_CHARSET
             )
         else:
-            raise ValueError('no such driver: %s' % dbconfig['driver'])
+            raise ValueError(
+                'no such driver: %s' % config.DB_DRIVER
+            )
 
     @classmethod
     def singleton(cls):
@@ -35,7 +35,7 @@ class Db(object):
 
     def table_prefix(self):
         ''' 从配置中获取数据表前缀 '''
-        return self.__config['tablePrefix']
+        return config.DB_TABLE_PREFIX
 
     def query(self, sql, params=None, fetchone=False, bydict=True):
         '''
@@ -56,7 +56,7 @@ class Db(object):
         try:
             cursor.execute(sql, params)
         finally:
-            if self.__config['log_sql']:
+            if config.DB_LOG_SQL:
                 debug.sql(sql)
 
         if bydict:
@@ -79,7 +79,7 @@ class Db(object):
         try:
             rowcount = cursor.execute(sql, params)
         finally:
-            if self.__config['log_sql']:
+            if config.DB_LOG_SQL:
                 debug.sql(sql)
 
         return {

@@ -88,7 +88,7 @@ class Application(object):
 				# notfound
 				aResponse.set_status(response.NOT_FOUND)
 
-				path = config.get_value('system/notfound')
+				path = config.NOTFOUND_PAGE
 				c = aRunBox.controller(path)
 				if c is None:
 					aResponse.set_header('Content-Type','text/plain; charset=utf-8')
@@ -121,7 +121,7 @@ class Application(object):
 			aResponse.set_header('Content-Type','text/plain; charset=utf-8')
 			
 			body = ''
-			if 'debug' == config.get_value('system/debug'):
+			if config.SYSTEM_IS_DEBUG:
 				body += 'controllerPath:%s\n'%aRequest.controllerPath()
 				body += traceback.format_exc()
 				body += "environ:\n"
