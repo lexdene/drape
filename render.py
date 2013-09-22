@@ -1,3 +1,4 @@
+from . import config
 
 _jinja2_env = None
 def jinja2(templatePath,vardict):
@@ -7,7 +8,7 @@ def jinja2(templatePath,vardict):
 		import util
 		util.mkdir_not_existing('data/jinja_cache')
 		_jinja2_env = jinja2.Environment(
-			loader = jinja2.FileSystemLoader('app/template'),
+			loader = jinja2.FileSystemLoader(config.TEMPLATE_DIR),
 			extensions = ['jinja2.ext.do'],
 			bytecode_cache = jinja2.FileSystemBytecodeCache('data/jinja_cache')
 		)
@@ -18,7 +19,7 @@ def jinja2(templatePath,vardict):
 	return template.render(**vardict)
 
 def mako(templatePath,vardict):
-	template_folder = 'app/template'
+	template_folder = config.TEMPLATE_DIR
 	template_filepath = '%s.html'%templatePath
 	from mako.template import Template
 	from mako.lookup import TemplateLookup
