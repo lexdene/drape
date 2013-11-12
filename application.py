@@ -1,252 +1,41 @@
-# -*- coding: utf-8 -*-
+''' application '''
 
-# system import
-import os
-import sys
-import traceback
-import time
+import request
+import middleware
 
-# drape import
-import controller
-import config
-import runbox
-import eventCenter
-import util
-import response
+class Base(object):
+    ''' base application '''
+    def __init__(self):
+        self.app_init()
 
-class Application(object):
-	__singleton = None
-	
-	@staticmethod
-	def singleton():
-		return Application.__singleton
-		
-	@staticmethod
-	def setSingleton(singleton):
-		Application.__singleton = singleton
-		
-	def __init__(self):
-		self.__apptype = 'cgi'
-		self.__log = None
-		self.__eventCenter = None
-		self.setSingleton(self)
-		self.systemInit()
-		
-	def systemInit(self):
-		'''
-		系统级初始化，
-		这函数理论上讲应该仅在开机/启动服务器的时候执行一次，以后就不再执行了。
-		'''
-		# give app a chance to register event handler
-		try:
-			from app.main import init as appinit
-			appinit(self)
-		except Exception as e:
-			import debug
-			debug.debug('app init error: %s' % e)
-			pass
-		
-	def start(self):
-		self.run()
-		
-	def run(self,environ):
-		try:
-			aRunBox = runbox.RunBox(self)
-			
-			# run begin
-			self.eventCenter().emit(
-				'run_begin',
-				dict(runbox=aRunBox)
-			)
-			
-			# init request and response
-			aRequest = aRunBox.request()
-			aResponse = aRunBox.response()
-			
-			# request run
-			aRequest.run(environ)
-			
-			# after request run
-			self.eventCenter().emit(
-				'after_request_run',
-				dict(
-					application=self,
-					request=aRequest
-				)
-			)
-			
-			# redirect path without postfix '/'
-			if aRequest.REQUEST_URI == aRequest.rootPath():
-				aResponse.set_status(response.REDIRECT)
-				aResponse.set_header('Location', aRequest.rootPath() + '/')
-				return aResponse
-			
-			# init controller
-			path = aRequest.controllerPath()
-			c = aRunBox.controller(path)
-			if c is None:
-				# notfound
-				aResponse.set_status(response.NOT_FOUND)
+    def app_init(self):
+        ''' run for one time '''
+        pass
 
-				path = config.NOTFOUND_PAGE
-				c = aRunBox.controller(path)
-				if c is None:
-					aResponse.set_header('Content-Type','text/plain; charset=utf-8')
-					aResponse.set_body('404 Not Found')
-					return aResponse
-			
-			# response
-			try:
-				run_result = c.run()
-				aResponse.set_body(run_result)
-			except controller.HTTPError as http_error:
-				aResponse.set_status(http_error.description)
-				aResponse.set_header(
-					'Content-Type',
-					'text/plain; charset=utf-8'
-				)
-				aResponse.set_body(http_error.description)
+    def run(self, _env):
+        ''' run for each request '''
+        pass
 
-			# flush
-			aRunBox.flush()
-			
-			# run end
-			self.eventCenter().emit(
-				'run_end',
-				dict(
-					runbox = aRunBox
-				)
-			)
-		except Exception as e:
-			aResponse.set_header('Content-Type','text/plain; charset=utf-8')
-			
-			body = ''
-			if config.SYSTEM_IS_DEBUG:
-				body += 'controllerPath:%s\n'%aRequest.controllerPath()
-				body += traceback.format_exc()
-				body += "environ:\n"
-				for k,v in environ.iteritems():
-					body += "%s => %s\n"%(k,v)
-			else:
-				body = response.ERROR
-			
-			aResponse.set_body(body)
-			aResponse.set_status(response.ERROR)
-		return aResponse
-		
-	def apptype(self):
-		return self.__apptype
-		
-	def saveUploadFile(self,fileobj,filepath, domain):
-		pass
-		
-	def log(self,type,data):
-		if self.__log is None:
-			import logging
-			self.__log = logging
-			dirpath = 'data/log'
-			util.mkdir_not_existing(dirpath)
-			filepath = dirpath + '/%s.log'%time.strftime('%Y-%m-%d',time.localtime())
-			logging.basicConfig(
-				filename = filepath,
-				level = logging.DEBUG,
-				format = '[%(asctime)s] [%(levelname)s] %(message)s'
-			)
-			logging.addLevelName(logging.DEBUG+5,'SQL')
+class WsgiApplication(Base):
+    ''' application for wsgi '''
+    def run(self, env):
+        request_obj = request.Request(env)
 
-		# remove \n
-		data = util.to_unicode(data).replace(u'\n',u'\\n')
-			
-		if 'debug' == type:
-			self.__log.debug(data)
-		elif 'info' == type:
-			self.__log.info(data)
-		elif 'warning' == type:
-			self.__log.warning(data)
-		elif 'error' == type:
-			self.__log.error(data)
-		elif 'critical' == type:
-			self.__log.critical(data)
-		elif 'sql' == type:
-			self.__log.log(self.__log.DEBUG+5,data)
-	
-	def eventCenter(self):
-		if self.__eventCenter is None:
-			self.__eventCenter = eventCenter.EventCenter()
-		return self.__eventCenter
+        return middleware.run(request_obj)
 
-class WsgiApplication(Application):
-	def __init__(self):
-		super(WsgiApplication,self).__init__()
-		self.__apptype = 'wsgi'
-		
-	def start(self):
-		return
-		
-	def __call__(self,environ, start_response):
-		aResponse = self.run(environ)
-		
-		ret = aResponse.body()
-		if isinstance(ret, unicode):
-			ret = ret.encode('utf-8')
-		else:
-			ret = str(ret)
-		
-		write = start_response(
-			aResponse.status(),
-			list(aResponse.headers())
-		)
-		
-		return ret
-		
-	def saveUploadFile(self,fileobj,filepath, domain):
-		dirpath = 'data/%s'%domain
-		urldirpath = 'static/upload/%s'%domain
+    def __call__(self, env, start_response):
+        # response
+        response_obj = self.run(env)
 
-		util.mkdir_not_existing( dirpath )
-		
-		fileurlpath = os.path.join(urldirpath, filepath)
-		filepath = os.path.join(dirpath, filepath)
+        # header
+        start_response(
+            response_obj.status(),
+            list(response_obj.headers())
+        )
 
-		with open( filepath ,'w') as fout:
-			fileobj.file.seek(0)
-			fout.write( fileobj.file.read() )
-
-		return fileurlpath
-
-class SaeApplication(WsgiApplication):
-	def __init__(self):
-		super(SaeApplication,self).__init__()
-		self.__apptype = 'sae'
-		
-	def sae_config(self):
-		import sae.const
-		config={
-			'db' : {
-				'dbname' : sae.const.MYSQL_DB ,
-				'user' : sae.const.MYSQL_USER ,
-				'password' : sae.const.MYSQL_PASS ,
-				'host' : sae.const.MYSQL_HOST ,
-				'port' : sae.const.MYSQL_PORT,
-			},
-			'session' : {
-				'store_type' : 'memcache',
-				'store_args' : None,
-			}
-		}
-		return config
-		
-	def saveUploadFile(self,fileobj,filepath):
-		import sae.storage
-		s = sae.storage.Client()
-		fileobj.file.seek(0)
-		ob = sae.storage.Object(fileobj.file.read())
-		domain_name = config.config['sae_storage']['domain_name']
-		return s.put(domain_name, filepath, ob)
-		
-	def log(self,type,data):
-		print '[%s] [%s] %s'%(
-				time.strftime('%Y-%m-%d %H:%M:%S',time.localtime()),
-				type,
-				str(data)
-			)
+        # body
+        body = response_obj.body()
+        if isinstance(body, unicode):
+            return body.encode('utf-8')
+        else:
+            return body

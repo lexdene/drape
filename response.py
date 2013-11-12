@@ -24,13 +24,15 @@ def get_desc_by_code(status_code):
 
 class Response(object):
     ''' 响应对象 '''
-    def __init__(self):
-        self.__status = OK
-        self.__headers = dict()
-        self.__body = ''
+    def __init__(self, status = OK, headers = None, body = ''):
+        self.__status = status
 
-        self.set_header('Content-Type', 'text/html; charset=utf-8')
-        self.set_header('X-Powered-By', 'python-drape')
+        self.__headers = dict()
+        if headers:
+            for key, value in headers.iteritems():
+                self.__headers[key] = value
+
+        self.__body = body
 
     def set_status(self, status):
         ''' 设置响应状态 '''
@@ -70,3 +72,7 @@ class Response(object):
     def body(self):
         ''' 响应主体 '''
         return self.__body
+
+    def has_header(self, name):
+        ''' 判断是否包含某个header '''
+        return name in self.__headers

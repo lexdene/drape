@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 ''' 控制器相关模块 '''
-from functools import wraps
-
-from . import config, render, response
+from . import config, render
 
 
 class Controller(object):
@@ -133,43 +131,3 @@ class JsonController(Controller):
             template_path,
             variables
         )
-
-
-class HTTPError(Exception):
-    ''' 所有http错误的基类 '''
-    def __init__(self, http_code):
-        self.__code = http_code
-        self.__desc = response.get_desc_by_code(http_code)
-
-    @property
-    def code(self):
-        return self.__code
-
-    @property
-    def description(self):
-        return self.__desc
-
-
-class NotAllowed(HTTPError):
-    ''' 405 Method Not Allowed '''
-    def __init__(self):
-        super(NotAllowed, self).__init__(405)
-
-
-class Forbidden(HTTPError):
-    ''' 403 Forbidden '''
-    def __init__(self):
-        super(Forbidden, self).__init__(403)
-
-
-def post_only(func):
-    ''' 只接受POST请求 '''
-    @wraps(func)
-    def new_func(self):
-        ''' 检查 request method 是不是post '''
-        method = self.runbox().request().REQUEST_METHOD
-        if method == 'POST':
-            func(self)
-        else:
-            raise NotAllowed
-    return new_func

@@ -4,7 +4,7 @@
 SYSTEM_IS_DEBUG = True
 NOTFOUND_PAGE = 'notfound/Index'
 DEFAULT_MOD = 'index'
-DEFAULT_CLASS = 'Index'
+DEFAULT_CONTROLLER = 'Index'
 
 DB_DRIVER = 'mysql'
 DB_NAME = ''
@@ -26,4 +26,13 @@ SESSION_SECRET_KEY = 'drape_web_framework'
 
 TEMPLATE_DIR = 'template'
 
-from app.config.config import *
+MIDDLEWARES = [
+    'drape.middleware.ControllerRunner',
+    'drape.middleware.HttpErrorProcessor',
+    'drape.middleware.ExtraHeaders',
+    'drape.middleware.SessionWrapper',
+    'drape.middleware.CookieWrapper',
+    'drape.middleware.ExceptionTraceback'
+]
+
+from app.config import *
