@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 ''' default config for drape '''
 
 
@@ -35,4 +36,7 @@ MIDDLEWARES = [
     'drape.middleware.ExceptionTraceback'
 ]
 
+
+# 此处仅import app.config
+# app内部逻辑由app.config.__init__处理
 from app.config import *

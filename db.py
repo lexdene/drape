@@ -57,7 +57,8 @@ class Db(object):
             cursor.execute(sql, params)
         finally:
             if config.DB_LOG_SQL:
-                debug.sql(sql)
+                logger = debug.get_logger()
+                logger.debug(sql)
 
         if bydict:
             column_names = cursor.column_names
@@ -80,7 +81,8 @@ class Db(object):
             rowcount = cursor.execute(sql, params)
         finally:
             if config.DB_LOG_SQL:
-                debug.sql(sql)
+                logger = debug.get_logger()
+                logger.debug(sql)
 
         return {
             'last_insert_id': cursor.lastrowid,

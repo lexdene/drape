@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 ''' 响应相关模块 '''
 
+from render import json
+
 OK = '200 OK'
 REDIRECT = '301 Moved Permanently'
 FORBIDDEN = '403 Forbidden'
@@ -24,7 +26,7 @@ def get_desc_by_code(status_code):
 
 class Response(object):
     ''' 响应对象 '''
-    def __init__(self, status = OK, headers = None, body = ''):
+    def __init__(self, status=OK, headers=None, body=''):
         self.__status = status
 
         self.__headers = dict()
@@ -76,3 +78,21 @@ class Response(object):
     def has_header(self, name):
         ''' 判断是否包含某个header '''
         return name in self.__headers
+
+
+def json_response(obj):
+    return Response(
+        headers={
+            'Content-Type': 'text/plain; charset=utf-8',
+        },
+        body=json(obj)
+    )
+
+
+def plaintext_response(obj):
+    return Response(
+        headers={
+            'Content-Type': 'text/plain; charset=utf-8',
+        },
+        body=str(obj)
+    )
