@@ -5,6 +5,7 @@ from render import json
 
 OK = '200 OK'
 REDIRECT = '301 Moved Permanently'
+BAD_REQUEST = '400 Bad request'
 FORBIDDEN = '403 Forbidden'
 NOT_FOUND = '404 Not Found'
 NOT_ALLOWED = '405 Method Not Allowed'
@@ -16,6 +17,7 @@ def get_desc_by_code(status_code):
     desc_map = {
         200: OK,
         301: REDIRECT,
+        400: BAD_REQUEST,
         403: FORBIDDEN,
         404: NOT_FOUND,
         405: NOT_ALLOWED,

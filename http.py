@@ -27,6 +27,21 @@ class HTTPError(Exception):
         return self.description
 
 
+class BadRequest(HTTPError):
+    ''' 400 Bad Request '''
+    def __init__(self, param, msg):
+        super(BadRequest, self).__init__(400)
+
+        self.__param = param
+        self.__msg = msg
+
+    def body(self):
+        return '%s invalid: %s' % (
+            self.__param,
+            self.__msg
+        )
+
+
 class NotFound(HTTPError):
     ''' 404 Not Found '''
     def __init__(self, path):
