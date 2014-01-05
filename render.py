@@ -38,15 +38,21 @@ def mako(templatePath, vardict):
 
 def json(vardict):
     import json
-    from datetime import datetime, date
+    from datetime import time, datetime, date, timedelta
 
     class ComplexEncoder(json.JSONEncoder):
         def default(self, obj):
-            if isinstance(obj, datetime):
+            if isinstance(obj, time):
+                return obj.strftime('%H:%M:%S')
+            elif isinstance(obj, datetime):
                 return obj.strftime('%Y/%m/%d %H:%M:%S')
             elif isinstance(obj, date):
                 return obj.strftime('%Y-%m-%d')
+            elif isinstance(obj, timedelta):
+                return self.default(
+                    (datetime.min + obj).time()
+                )
             else:
-                return super(ComplexEncoder, self).default(self, obj)
+                return super(ComplexEncoder, self).default(obj)
 
     return json.dumps(vardict, cls=ComplexEncoder)

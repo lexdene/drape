@@ -85,7 +85,7 @@ class Response(object):
 def json_response(obj):
     return Response(
         headers={
-            'Content-Type': 'text/plain; charset=utf-8',
+            'Content-Type': 'application/json; charset=utf-8',
         },
         body=json(obj)
     )
