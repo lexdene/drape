@@ -1,4 +1,5 @@
 ''' middlewares '''
+import sys
 import traceback
 
 import config
@@ -6,6 +7,7 @@ import response
 import http
 import cookie
 import session
+from . import version
 from import_util import import_obj, import_module
 
 
@@ -71,7 +73,10 @@ class ExceptionTraceback(Base):
     def process_exception(self, exception):
         body = ''
         if config.SYSTEM_IS_DEBUG:
-            body += 'controller path: %s\n' % self._request.controller_path()
+            body += 'controller path: %s/%s\n' % (
+                self._request.module_name(),
+                self._request.controller_name()
+            )
             body += traceback.format_exc()
 
             body += 'environ:\n'
@@ -136,7 +141,14 @@ class ExtraHeaders(Base):
 
         response_obj.set_header(
             'X-Powered-By',
-            'python-drape'
+            'Python: %s, drape: %s' % (
+                '%s.%s.%s' % (
+                    sys.version_info.major,
+                    sys.version_info.minor,
+                    sys.version_info.micro
+                ),
+                version
+            )
         )
 
 
@@ -145,8 +157,8 @@ class ControllerRunner(Base):
     def process_request(self, request):
         super(ControllerRunner, self).process_request(request)
 
-        path = request.controller_path()
-        module_name, controller_name = path.split('/')
+        module_name = request.module_name()
+        controller_name = request.controller_name()
 
         if not module_name:
             module_name = config.DEFAULT_MOD
@@ -175,6 +187,10 @@ class ControllerRunner(Base):
         if not controller:
             raise http.NotFound(path)
 
+        request.controller_path = '%s/%s' % (
+            module_name,
+            controller_name
+        )
         response_obj = controller(request)
         if isinstance(response_obj, response.Response):
             return response_obj

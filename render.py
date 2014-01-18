@@ -56,3 +56,13 @@ def json(vardict):
                 return super(ComplexEncoder, self).default(obj)
 
     return json.dumps(vardict, cls=ComplexEncoder)
+
+
+__render_func_map = {
+    'jinja2': jinja2,
+    'mako': mako
+}
+def render(path, variables):
+    template = config.DEFAULT_TEMPLATOR
+    render_func = __render_func_map[template]
+    return render_func(path, variables)

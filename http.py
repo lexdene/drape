@@ -68,11 +68,11 @@ class Forbidden(HTTPError):
 def post_only(func):
     ''' 只接受POST请求 '''
     @wraps(func)
-    def new_func(self):
+    def new_func(request):
         ''' 检查 request method 是不是post '''
-        method = self.runbox().request().REQUEST_METHOD
+        method = request.REQUEST_METHOD
         if method == 'POST':
-            func(self)
+            return func(request)
         else:
             raise NotAllowed
     return new_func

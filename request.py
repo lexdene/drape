@@ -6,7 +6,6 @@ import cgi
 class Request(object):
     ''' request object '''
     def __init__(self, env):
-        self.__controller_path = None
         self.env = env
 
         self.__field_storage = None
@@ -25,23 +24,26 @@ class Request(object):
             self.__url_path += '?'+query
         
         # controller path
+        # first item is empty string
         # path_splits must be shorter than 20
         path_splits = path.split('/')[1:21]
         
-        mod = ''
-        cls = ''
-        try:
-            mod, cls = path_splits
-        except ValueError:
-            pass
-        
-        self.__controller_path = '%s/%s' % (mod, cls)
-        
-        # path params
-        for i in range(2, len(path_splits) - 1, 2):
-            key = path_splits[i]
-            value = path_splits[i + 1]
-            self.__param_dict[key] = value
+        if len(path_splits) > 0:
+            self.__module_name = path_splits[0]
+        else:
+            self.__module_name = None
+
+        if len(path_splits) > 1:
+            self.__controller_name = path_splits[1]
+        else:
+            self.__controller_name = None
+
+        if len(path_splits) > 2:
+            # path params
+            for i in range(2, len(path_splits) - 1, 2):
+                key = path_splits[i]
+                value = path_splits[i + 1]
+                self.__param_dict[key] = value
         
         # field storage
         self.__field_storage = cgi.FieldStorage(
@@ -81,10 +83,14 @@ class Request(object):
         ''' full url '''
         return self.__url_path
         
-    def controller_path(self):
-        ''' path for controller '''
-        return self.__controller_path
-        
+    def module_name(self):
+        ''' module name '''
+        return self.__module_name
+
+    def controller_name(self):
+        ''' class name '''
+        return self.__controller_name
+
     def params(self):
         ''' request params '''
         return self.__param_dict
