@@ -125,11 +125,13 @@
     user_list = user_model.join(
         'company',
         {
-            'company.name': 'user.company'
+            'company.name': ('F', 'user.company')
         }
     ).select()
 
 join的第一个参数是表名，第二个参数是查询条件。
+
+`F`表示user.company是一个字段，而不是一个字符串。
 
 ### 排序查询
 
@@ -156,10 +158,6 @@ order的第一个参数是排序的列名，第二个参数是排序顺序
 此需求常见于分页
 
 ### select and count
-
-MySQL中有一个很牛逼的东西叫`SQL_CALC_FOUND_ROWS`,
-我曾经写过一篇博客介绍这个东西, 见
-https://github.com/lexdene/md-blog/blob/master/mysql/found_rows.md
 
 它的用途的是在select的同时，
 查询共有多少条满足条件。
