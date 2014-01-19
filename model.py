@@ -5,6 +5,12 @@ import db
 from . import util
 
 
+class FieldParam(object):
+    ''' param as a field '''
+    def __init__(self, name):
+        self.name = name
+
+
 class LinkedModel(object):
     __cache = {}
 
@@ -23,7 +29,10 @@ class LinkedModel(object):
     def where(self, *args, **kwargs):
         ''' where条件 '''
         self.__where_list.extend(args)
-        self.__where_list.append(kwargs)
+
+        if kwargs:
+            self.__where_list.append(kwargs)
+
         return self
 
     ASC = 'ASC'
@@ -63,6 +72,19 @@ class LinkedModel(object):
             alias:       别名, None表示不加别名, 默认为None
             join_type:   连接类型, left/right, 默认为left
         '''
+        # check join type
+        if join_type not in (self.LEFT, self.RIGHT):
+            raise ValueError('no such join type: %s' % join_type)
+
+        # join on
+        if not isinstance(on, dict):
+            raise TypeError(
+                'join on param must be dict. got type: %s, value: %s' % (
+                    on.__class__,
+                    on
+                )
+            )
+
         if alias is None:
             alias = table_name
 
@@ -84,8 +106,9 @@ class LinkedModel(object):
     REFLECT_NO = 'n'
     REFLECT_IF_UNDEFINE_FIELDS = 'i'
 
-    def select(self, fields=None, sql_options=None, query_options=None,
-               field_reflect_type=None, reflect_tables=None):
+    def select(self, fields=None, sql_options=None, query_options=dict(),
+               field_reflect_type=REFLECT_YES,
+               reflect_tables=None):
         '''
             构造select语句并执行
             fields:              返回的字段, 默认为空
@@ -101,7 +124,7 @@ class LinkedModel(object):
                 bydict:          以字典形式返回查询结果, 默认为True
             field_reflect_type:  自动反射字段的方式
                 REFLECT_YES:     反射表中的字段, 附加fields中指定的字段
-                REFLECT_NONE:    不反射表中的字段, 只查询fields中指定的字段
+                REFLECT_NO:      不反射表中的字段, 只查询fields中指定的字段
                 REFLECT_IF_UNDEFINE_FIELDS:
                                  如果没有指定fields, 则反射;
                                  否则不反射
@@ -112,7 +135,7 @@ class LinkedModel(object):
         # build strings
         option_string = self.__build_option_string(sql_options)
         field_string = self.__build_field_string(
-            fields, field_reflect_type, reflect_fields
+            fields, field_reflect_type, reflect_tables
         )
         table_string = self.__build_table_string()
         join_string = self.__build_join_string()
@@ -144,8 +167,9 @@ class LinkedModel(object):
         # return
         return result
 
-    def find(self):
-        result = self.limit(1).select()
+    def find(self, *args, **kwargs):
+        ''' 获取一条记录, 参数见select '''
+        result = self.limit(1).select(*args, **kwargs)
         if len(result) < 1:
             return None
         else:
@@ -173,7 +197,8 @@ class LinkedModel(object):
             query_options={
                 'fetchone': True,
                 'bydict': False
-            }
+            },
+            field_reflect_type=self.REFLECT_NO
         )
         return result[0]
 
@@ -188,7 +213,7 @@ class LinkedModel(object):
 
     def select_and_count(self):
         ''' 同时获取select结果与匹配条件的结果数目 '''
-        result = self.select(options=(SQL_CALC_FOUND_ROWS,))
+        result = self.select(sql_options=(self.SQL_CALC_FOUND_ROWS,))
         count = self.found_rows()
         return result, count
 
@@ -200,7 +225,7 @@ class LinkedModel(object):
         ''' 执行update操作 '''
         return result['row_count']
 
-    def __clear_link_data():
+    def __clear_link_data(self):
         self.__alias = None
         self.__where_list = list()
         self.__order_list = list()
@@ -209,6 +234,12 @@ class LinkedModel(object):
         self.__join_list = list()
         self.__group_list = list()
         self.__params = dict()
+
+    def __build_option_string(self, options):
+        if options:
+            return ' ' + ' '.join(options)
+        else:
+            return ''
 
     def __get_column_list(self, table_name):
         cache = self.__class__.__cache
@@ -241,7 +272,10 @@ class LinkedModel(object):
         table_name_list = list()
 
         # self table
-        table_name_list.append((self.__table_name, self.__alias))
+        table_name_list.append((
+            self.__table_name,
+            self.__alias if self.__alias else self.__table_name
+        ))
 
         # join tables
         table_name_list.extend(
@@ -255,20 +289,22 @@ class LinkedModel(object):
 
     def __build_field_string(self, fields, field_reflect_type, reflect_tables):
         ''' 构建field语句, 直接用于select '''
-        if field_reflect_type == REFLECT_IF_UNDEFINE_FIELDS:
+        if field_reflect_type == self.REFLECT_IF_UNDEFINE_FIELDS:
             if fields:
                 field_list = self.__build_field_list_by_fields(fields)
             else:
                 field_list = self.__build_field_list_by_reflect(reflect_tables)
-        elif field_reflect_type == REFLECT_YES:
+        elif field_reflect_type == self.REFLECT_YES:
             field_list = self.__build_field_list_by_reflect(reflect_tables)
             if fields:
                 field_list.extend(
                     self.__build_field_list_by_fields(fields)
                 )
-        elif field_reflect_type == REFLECT_NONE:
+        elif field_reflect_type == self.REFLECT_NO:
             assert not fields is None
             field_list = self.__build_field_list_by_fields(fields)
+        else:
+            raise ValueError('no such reflect type: %s' % field_reflect_type)
 
         return '\n' + ',\n'.join(field_list)
 
@@ -323,21 +359,23 @@ class LinkedModel(object):
         table_name = self.__db.table_prefix() + self.__table_name
 
         return '`%s` as %s' % (
-            table_name, alias
-        ) if alias else '`%s`' % table_name
+            table_name,
+            alias if alias else self.__table_name
+        )
 
     def __build_join_string(self):
+        table_prefix = self.__db.table_prefix()
         return ''.join([
             '\n' + '{join_type} join `{table}`{alias}{on}'.format(
                 join_type=join['join_type'],
-                table=join['table'],
-                alias=' alias %s' % join['alias'] if join['alias'] else '',
+                table=table_prefix + join['table'],
+                alias=' as %s' % join['alias'] if join['alias'] else '',
                 on=' on (%s)' % (
                     self.__build_condition_string(join['on'])
                 ) if join['on'] else ''
             )
             for join in self.__join_list
-        })
+        ])
 
     def __build_where_string(self):
         if self.__where_list:
@@ -390,15 +428,6 @@ class LinkedModel(object):
             elif isinstance(value, tuple):
                 operator, realvalue = value
 
-                # value as field
-                value_as_field = False
-                if operator[-1] == 'F':
-                    operator = operator[:-1]
-                    value_as_field = True
-
-                    if len(operator) == 0:
-                        operator = '='
-
                 # switch operator
                 if operator == 'in':
                     if isinstance(value, tuple):
@@ -421,11 +450,11 @@ class LinkedModel(object):
                         ])
                     )
                 elif operator in ('=', '>', '<', '>=', '<='):
-                    if value_as_field:
+                    if isinstance(realvalue, FieldParam):
                         return '%s %s %s' % (
                             key,
                             relation,
-                            realvalue
+                            realvalue.name
                         )
                     else:
                         return '%s %s %%(%s)s' % (
@@ -434,10 +463,12 @@ class LinkedModel(object):
                             self.__add_param(key, realvalue)
                         )
                 else:
-                    raise ValueError('unknown relation: %s' % relation)
+                    raise ValueError('unknown operator: %s' % operator)
+            elif isinstance(value, FieldParam):
+                return '%s = %s' % (key, value.name)
             else:
                 raise TypeError(
-                    'can not resolve value.type: %s, value: %s' % (
+                    'can not resolve value. type: %s, value: %s' % (
                         value.__class__,
                         value
                     )
@@ -489,3 +520,6 @@ class LinkedModel(object):
 
         self.__params[key] = value
         return key
+
+
+F = FieldParam

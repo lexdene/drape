@@ -125,7 +125,7 @@
     user_list = user_model.join(
         'company',
         {
-            'company.name': ('F', 'user.company')
+            'company.name': F('user.company')
         }
     ).select()
 
