@@ -2,475 +2,161 @@
 
 import db
 
+from . import util
+
+
 class LinkedModel(object):
-	__cache = {}
+    __cache = {}
 
-	def __init__(self,sTableName):
-		self.__tableName = sTableName
-		self.__db = db.Db.singleton()
-		self.__params = None
-		
-		# linked data
-		self.__clearLinkedData()
-		
-	def field(self,column,table=None):
-		self.__appendLinkedData('field',dict(
-			column=column,
-			table=table
-		))
-		return self
-		
-	def reflectField(self,r):
-		'''
-		True : 强制反射所有表
-		False : 强制不反射任何表
-		None/'auto' : 如果有field参数，则不反射；如果没有field参数，则反射
-		list() : 仅反射列表中指定的表，表名必须使用alias name
-		
-		默认为True
-		'''
-		self.__setLinkedData('reflectField',r)
-		return self
-		
-	def alias(self,a):
-		self.__setLinkedData('alias',a)
-		return self
-		
-	def where(self,data = None,**w):
-		'''
-			设置where参数
-			字典的形式
-		'''
-		if data is None:
-			data = w
-		else:
-			data.update(w)
-		self.__setLinkedData('where', data)
-		return self
-		
-	def order(self, field, sequence=None):
-		self.__appendLinkedData('order', (field, sequence))
-		return self
-		
-	def limit(self,length,offset=None):
-		self.__setLinkedData('limit',dict(length=length,offset=offset))
-		return self
-		
-	def join(self,jointable,alias=None,on=None,jointype='left'):
-		if alias is None:
-			alias = jointable
-		self.__appendLinkedData(
-			'join',
-			dict(
-				jointable=jointable,
-				alias=alias,
-				on=on,
-				jointype = jointype
-			)
-		)
-		return self
-		
-	def group(self,g):
-		self.__appendLinkedData('group',g)
-		return self
-		
-	def select(self, options=[]):
-		fieldString = self.__buildFieldString()
-		tableString = self.__buildTableString()
-		joinString = self.__buildJoinString()
-		whereString = self.__buildWhereString()
-		orderString = self.__buildOrderString()
-		limitString = self.__buildLimitString()
-		groupString = self.__buildGroupString()
-		
-		queryString = "select{options}{field}\nfrom {table}{join}{where}{group}{order}{limit}".format(
-			options=' ' + ' '.join(options) if options else '',
-			field=fieldString,
-			table=tableString,
-			join=joinString,
-			where=whereString,
-			group=groupString,
-			order=orderString,
-			limit=limitString
-		)
+    def __init__(self, table_name):
+        self.__table_name = table_name
+        self.__db = db.Db.singleton()
 
-		res = self.__db.query(queryString, self.__params)
-		self.__clearLinkedData()
-		return res
-		
-	def select_and_count(self):
-		res = self.select(['SQL_CALC_FOUND_ROWS'])
-		count = self.found_rows()
-		return res, count
+        # clear link data
+        self.__clear_link_data()
 
-	def find(self):
-		res = self.limit(1).select()
-		if len(res) < 1:
-			return None
-		else:
-			return res[0]
-		
-	def count(self, countField='*'):
-		tableString = self.__buildTableString()
-		joinString = self.__buildJoinString()
-		whereString = self.__buildWhereString()
-		groupString = self.__buildGroupString()
-		
-		queryString = "select count(%s) from %s%s%s%s"%(
-			countField,
-			tableString,
-			joinString,
-			whereString,
-			groupString
-		)
-		
-		result = self.__db.query(
-			queryString,
-			self.__params,
-			fetchone=True,
-			bydict=False
-		)
-		self.__clearLinkedData()
-		return result[0]
-		
-	def insert(self,**data):
-		columnList = list()
-		valueList = list()
-		params = dict()
-		max_value_length = 0
-		for column,value in data.iteritems():
-			columnList.append(column)
-			if isinstance(value,(list,tuple) ):
-				max_value_length = max( max_value_length, len(value) )
-				for i, v in enumerate(value):
-					key = '%s_%d' % (column, i)
-					params[key] = v
-			else:
-				max_value_length = max(max_value_length, 1)
-				params[column] = value
-		
-		# empty
-		if max_value_length <= 0:
-			return
+    def alias(self, alias):
+        ''' 给主表起个别名, 这将影响到select后的字段名称 '''
+        self.__alias = alias
+        return self
 
-		tableString = self.__db.table_prefix() + self.__tableName
+    def where(self, *args, **kwargs):
+        ''' where条件 '''
+        self.__where_list.extend(args)
+        self.__where_list.append(kwargs)
+        return self
 
-		def get_column_fields(data, column, i):
-			if isinstance(data[column], (list, tuple)):
-				return '%%(%s_%d)s' % (column, i)
-			else:
-				return '%%(%s)s' % column
+    ASC = 'A'
+    DESC = 'D'
 
-		queryString = "insert into %(table)s (%(columns)s) values %(values)s"%{
-			'table' : tableString,
-			'columns' : ','.join(columnList),
-			'values' : ','.join([
-				'( %s )'% ','.join([
-					get_column_fields(data, column, i)
-					for column in columnList
-				])
-				for i in range(0,max_value_length)
-			])
-		}
+    def order(self, field, sequence=ASC):
+        '''
+            排序条件
+            field: 字段名
+            sequence: 排序顺序, DESC/ASC, 默认ASC
+        '''
+        self.__order_list.append((field, sequence))
+        return self
 
-		result = self.__db.execute(queryString, params)
-		self.__clearLinkedData()
-		return result['last_insert_id']
-		
-	def update(self,**data):
-		dataString = ''
-		dataStringPartedList = list()
-		for k,v in data.iteritems():
-			if k in self.__getColumnList(self.__tableName):
-				param_key = self.__addParam(k, v)
-				dataStringPartedList.append(
-					'%s=%%(%s)s' % (
-						param_key,
-						param_key
-					)
-				)
+    def limit(self, length):
+        ''' limit参数 '''
+        assert util.isInt(length)
+        self.__limit = length
+        return self
 
-		dataString = ' ,'.join(dataStringPartedList)
-		
-		tableString = self.__db.table_prefix() + self.__tableName
-		queryString = "update %(table)s set %(data)s %(where)s" % dict(
-			table = tableString,
-			data = dataString,
-			where = self.__buildWhereString()
-		)
-		
-		result = self.__db.execute(queryString, self.__params)
-		self.__clearLinkedData()
-		return result['row_count']
+    LEFT = 'left'
+    RIGHT = 'right'
 
-	def found_rows(self):
-		res = self.__db.query(
-			'select FOUND_ROWS()',
-			fetchone=True,
-			bydict=False
-		)
-		return res[0]
+    def join(self, table_name, on=None, alias=None, join_type=LEFT):
+        '''
+            连接表
+            table_name:  表名
+            on:          连接条件
+            alias:       别名, None表示不加别名, 默认为None
+            join_type:   连接类型, left/right, 默认为left
+        '''
+        if alias is None:
+            alias = table_name
 
-	def __appendLinkedData(self,name,value):
-		if not name in self.__linkedData:
-			self.__linkedData[name] = list()
-		
-		self.__linkedData[name].append( value )
-	
-	def __setLinkedData(self,name,value):
-		self.__linkedData[name] = value
-		
-	def __getLinkedData(self, name, defaultValue=None):
-		return self.__linkedData.get(name, defaultValue)
-		
-	def __clearLinkedData(self):
-		self.__linkedData = dict()
-		self.__params = dict()
+        self.__join_list.append({
+            'table_name': table_name,
+            'on': on,
+            'alias': alias,
+            'join_type': join_type
+        })
+        return self
 
-		# default alias
-		self.alias(self.__tableName)
-		
-	def __getTableNameList(self):
-		tableNameList = list()
-		tableNameList.append( self.__tableName )
-		
-		joinData = self.__getLinkedData('join')
-		if joinData:
-			for join in joinData:
-				tableNameList.append( join['jointable'] )
-			
-		return tableNameList
-	
-	def __getColumnList(self,tableName):
-		if not 'showColumns' in self.__cache:
-			self.__cache['showColumns'] = dict()
-		
-		if not tableName in self.__cache['showColumns']:
-			aIter = self.__db.query("SHOW COLUMNS FROM `%s%s`"%(
-				self.__db.table_prefix(),
-				tableName
-			))
-			columnList = list()
-		
-			for i in aIter:
-				columnList.append(i['Field'])
-			
-			self.__cache['showColumns'][tableName] = columnList
-		
-		return self.__cache['showColumns'][tableName]
-	
-	def __getTableAliasList(self):
-		tableAliasList = list()
-		aliasData = self.__getLinkedData('alias')
-		tableAliasList.append( (self.__tableName , aliasData) )
-		
-		joinData = self.__getLinkedData('join')
-		if joinData:
-			for join in joinData:
-				tableAliasList.append( (join['jointable'] , join['alias'] ) )
-				
-		return tableAliasList
-		
-	def __buildFieldString(self):
-		reflectFieldData = self.__getLinkedData('reflectField', True)
-		fieldData = self.__getLinkedData('field')
-		
-		if reflectFieldData == 'auto':
-			if fieldData:
-				fieldList = self.__buildFieldListByFieldData( fieldData )
-			else:
-				fieldList = self.__buildFieldListByColumn()
-		elif reflectFieldData == True:
-			fieldList = self.__buildFieldListByColumn()
-			if fieldData:
-				fieldList.extend( self.__buildFieldListByFieldData( fieldData ) )
-		elif reflectFieldData == False:
-			if fieldData:
-				fieldList = self.__buildFieldListByFieldData( fieldData )
-			else:
-				fieldList = list()
-		elif isinstance( reflectFieldData , list ):
-			fieldList = self.__buildFieldListByColumn(reflectFieldData)
-			if fieldData:
-				fieldList.extend( self.__buildFieldListByFieldData( fieldData ) )
-			
-		fieldString = '\n' + ',\n'.join(fieldList)
-		return fieldString
-		
-	def __buildFieldListByFieldData(self,fieldData):
-		fieldStringPartedList = list()
-		for f in fieldData:
-			if f['table']:
-				fieldStringParted = '`%s`.`%s` as `%s.%s`'%(
-					f['table'],
-					f['column'],
-					f['table'],
-					f['column']
-				)
-			else:
-				fieldStringParted = f['column']
-			fieldStringPartedList.append(fieldStringParted)
-		return fieldStringPartedList
-		
-	def __buildFieldListByColumn(self,tableAliasList=None):
-		# table alias
-		AllTableAliasList = self.__getTableAliasList()
-		table_alias_name = self.__getLinkedData(
-			'alias',
-			self.__tableName
-		)
+    def group(self, group):
+        ''' group by '''
+        self.__group_list.append(group)
+        return self
 
-		# build field
-		fieldStringPartedList = list()
-		for tableName , aliasName in AllTableAliasList:
-			if tableAliasList is None or aliasName in tableAliasList:
-				for columnName in self.__getColumnList(tableName):
-					if aliasName == table_alias_name:
-						fieldStringParted = '`%s`.`%s`'%(
-							aliasName,
-							columnName
-						)
-					else:
-						fieldStringParted = '`%s`.`%s` as `%s.%s`'%(
-							aliasName,
-							columnName,
-							aliasName,
-							columnName
-						)
-					
-					fieldStringPartedList.append( fieldStringParted )
-		
-		return fieldStringPartedList
-		
-	def __buildTableString(self):
-		aliasData = self.__getLinkedData('alias')
-		tableName = self.__db.table_prefix() + self.__tableName
-		if aliasData:
-			tableString = '`%s` as %s'%(tableName,aliasData)
-		else:
-			tableString = '`%s`'%(tableName)
-		
-		return tableString
-		
-	def __buildJoinString(self):
-		joinStringPartedList = list()
-		joinData = self.__getLinkedData('join')
-		table_prefix = self.__db.table_prefix()
-		if joinData:
-			for join in joinData:
-				joinStringParted = '%s join `%s`'%(
-					join['jointype'],
-					table_prefix+join['jointable'],
-				)
-				if join['alias']:
-					joinStringParted = joinStringParted + ' as %s'%join['alias']
-				if join['on']:
-					joinStringParted = joinStringParted + ' on (%s)'%join['on']
-				joinStringPartedList.append( joinStringParted )
-			joinString = "\n" + "\n".join( joinStringPartedList )
-		else:
-			joinString = ''
-		return joinString
+    SQL_CALC_FOUND_ROWS = 'SQL_CALC_FOUND_ROWS'
+    REFLECT_ALL = 'a'
+    REFLECT_NONE = 'n'
+    REFLECT_IF_UNDEFINE_FIELDS = 'i'
+    REFLECT_ONLY_IN_LIST = 'l'
 
-	def __buildWherePart(self, key, value):
-		if '$str' == key:
-			return value
-		elif '$or' == key:
-			return " OR ".join(
-				[self.__buildWhereStringFromData(v) for v in value]
-			)
-		elif isinstance(value, (basestring, int, long)):
-			param_key = self.__addParam(key, value)
-			return "%s = %%(%s)s" % (key, param_key)
-		elif isinstance(value, tuple):
-			relation, realvalue = value
-			if 'in' == relation:
-				param_key_list = list()
-				for i, v in enumerate(realvalue):
-					param_key = self.__addParam(
-						'%s_%d' % (key, i),
-						v
-					)
-					param_key_list.append(param_key)
+    def select(self, fields=None, sql_options=None, query_options=None,
+               field_reflect_type=None, reflect_fields=None):
+        '''
+            构造select语句并执行
+            fields:              返回的字段, 默认为空
+            sql_options:         select的选项, 默认为空
+            query_options:       query的选项, 字典形式
+                fetchone:        只获取一行数据, 默认为False
+                bydict:          以字典形式返回查询结果, 默认为True
+            field_reflect_type:  自动反射字段的方式
+                REFLECT_ALL:     反射全部字段
+                REFLECT_NONE:    不反射任何字段
+                REFLECT_IF_UNDEFINE_FIELDS:
+                                 如果没有指定fields, 则反射全部字段,
+                                 否则不反射任何字段
+                REFLECT_ONLY_IN_LIST:
+                                 只反射reflect_fields参数指定的字段
+                默认为REFLECT_IF_UNDEFINE_FIELDS
+        '''
+        return self
 
-				return "%s in %s" % (
-					key,
-					'(' + ','.join(
-						('%%(%s)s' % param_key for param_key in param_key_list)
-					) + ')'
-				)
-			elif relation in ('>', '<', '>=', '<='):
-				param_key = self.__addParam(key, realvalue)
-				return '%s %s %%(%s)s' % (key, relation, param_key)
-			else:
-				raise ValueError('no such relation: %s' % relation)
-		else:
-			raise ValueError(value)
+    def find(self):
+        result = self.limit(1).select()
+        if len(result) < 1:
+            return None
+        else:
+            return result[0]
 
-	def __buildWhereStringFromData(self, whereData):
-		if whereData:
-			return "(" + ") AND (".join(
-				[self.__buildWherePart(key, value) for key, value in whereData.iteritems()]
-			) + ")"
-		else:
-			return ''
+    def count(self, count_field=None):
+        '''
+            获取符合条件的记录的数目
+            count_field:  计数的列名, 默认为主表的id
+        '''
+        if count_field:
+            field = 'count(%s)' % count_field
+        else:
+            table_alias_name = self.__table_name
+            if self.__alias:
+                table_alias_name = self.__alias
 
-	def __buildWhereString(self):
-		ret = self.__buildWhereStringFromData(
-			self.__getLinkedData('where')
-		)
-		if ret:
-			return '\nwhere ' + ret
-		else:
-			return ''
+            field = 'count(`%s`.`%s`)' % (
+                table_alias_name,
+                'id'
+            )
 
-	def __buildOrderString(self):
-		orderData = self.__getLinkedData('order')
-		if orderData:
-			orderString = "\norder by "+','.join([
-				"%s %s" % (field, sequence) if sequence else field
-				for field, sequence in orderData
-			])
-		else:
-			orderString = ''
-		return orderString
-		
-	def __buildLimitString(self):
-		limitData = self.__getLinkedData('limit')
-		if limitData:
-			if limitData['offset'] is None:
-				limitString = '\nlimit %s' % limitData['length']
-			else:
-				limitString = '\nlimit %s,%s' % (
-					limitData['offset'],
-					limitData['length']
-				)
-		else:
-			limitString = ''
-		return limitString
-		
-	def __buildGroupString(self):
-		groupData = self.__getLinkedData('group')
-		if groupData:
-			groupString = '\ngroup by ' + ','.join(groupData)
-		else:
-			groupString = ''
-		return groupString
+        result = self.select(
+            fields=[field],
+            query_options={
+                'fetchone': True,
+                'bydict': False
+            }
+        )
+        return result[0]
 
-	def __addParam(self, key, value):
-		guess_length = 10
+    def found_rows(self):
+        result = self.__db.query(
+            'select FOUND_ROWS()',
+            fetchone=True,
+            bydict=False
+        )
 
-		if key in self.__params:
-			for i in range(guess_length):
-				guess_key = '%s_%d' % (key, i)
-				if not guess_key in self.__params:
-					break
+        return result[0]
 
-			if guess_length - 1 == i:
-				raise ValueError('can not guess key for %s' % key)
+    def select_and_count(self):
+        ''' 同时获取select结果与匹配条件的结果数目 '''
+        result = self.select(options=(SQL_CALC_FOUND_ROWS,))
+        count = self.found_rows()
+        return result, count
 
-			self.__params[guess_key] = value
-			return guess_key
-		else:
-			self.__params[key] = value
-			return key
+    def insert(self, *args, **kwargs):
+        ''' 执行insert操作 '''
+        return result['last_insert_id']
+
+    def update(self, *args, **kwargs):
+        ''' 执行update操作 '''
+        return result['row_count']
+
+    def __clear_link_data():
+        self.__alias = None
+        self.__where_list = list()
+        self.__order_list = list()
+        self.__join_list = list()
+        self.__group_list = list()
