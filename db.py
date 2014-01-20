@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 '''
     drape的db模块
-    封闭了部分数据库底层的操作
+    封装了部分数据库底层的操作
 '''
 from . import config, debug
 
@@ -15,7 +15,7 @@ class Db(object):
 
             self.__conn = self.__driver.connect(
                 host=config.DB_HOST,
-                port=int(config.DB_PORT),
+                port=config.DB_PORT,
                 user=config.DB_USER,
                 password=config.DB_PASSWORD,
                 database=config.DB_NAME,
