@@ -17,6 +17,12 @@ def md5sum(s):
     return m.hexdigest()
 
 
+def sha1sum(s):
+    hasher = hashlib.sha1()
+    hasher.update(s)
+    return hasher.hexdigest()
+
+
 def toInt(s, default=None):
     if isinstance(s, (int, long)):
         return s

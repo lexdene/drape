@@ -1,6 +1,5 @@
 ''' module for session '''
 import time
-import hashlib
 import re
 import base64
 import pickle
@@ -107,9 +106,9 @@ def _recreate_session_id(ip_address, secret_key, store):
     while True:
         rand = os.urandom(16)
         now = time.time()
-        session_id = hashlib.sha1(
+        session_id = util.sha1sum(
             "%s%s%s%s" % (rand, now, ip_address, secret_key)
-        ).hexdigest()
+        )
 
         if session_id not in store:
             break
