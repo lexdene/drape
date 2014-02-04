@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import urllib
 import hashlib
 import re
@@ -95,5 +97,19 @@ def _tile_data(source_data):
     return target_data
 
 
+
 def pluralize(word):
     return word + 's'
+
+
+def pick_dict(source, key_list):
+    '''
+        source是一个dict
+        从source中挑选出在key_list中的元素并重新组成一个新的dict
+    '''
+    target = dict()
+
+    for key in key_list:
+        target[key] = source[key]
+
+    return target
