@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
-import db
+import datetime
 
-from . import util
+from . import db, util
 
 
 class FieldParam(object):
@@ -246,6 +246,37 @@ class LinkedModel(object):
 
     def update(self, *args, **kwargs):
         ''' 执行update操作 '''
+        params = dict()
+        for arg in args:
+            params.update(arg)
+
+        if kwargs:
+            params.update(kwargs)
+
+        table_name = self.__db.table_prefix() + self.__table_name
+
+        # column list
+        column_list = self.__get_column_list(self.__table_name)
+
+        format_params = dict(
+            table=table_name,
+            data=' ,'.join((
+                '{k}=%({k})s'.format(
+                    k=self.__add_param(key, value)
+                )
+                for key, value in params.iteritems()
+                if key in column_list
+            )),
+            where=self.__build_where_string()
+        )
+
+        result = self.__db.execute(
+            'update {table} set {data} {where}'.format(
+                **format_params
+            ),
+            self.__params
+        )
+        self.__clear_link_data()
         return result['row_count']
 
     def __clear_link_data(self):
@@ -459,7 +490,8 @@ class LinkedModel(object):
         else:
             # normal key
             # key as field name
-            if isinstance(value, (basestring, int, long)):
+            if isinstance(value, (basestring, int, long,
+                                  datetime.datetime)):
                 param_key = self.__add_param(key, value)
                 return '%s = %%(%s)s' % (key, param_key)
             elif isinstance(value, tuple):
