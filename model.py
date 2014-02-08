@@ -219,6 +219,29 @@ class LinkedModel(object):
 
     def insert(self, *args, **kwargs):
         ''' 执行insert操作 '''
+        params = dict()
+        for arg in args:
+            params.update(arg)
+
+        if kwargs:
+            params.update(kwargs)
+
+        table_name = self.__db.table_prefix() + self.__table_name
+        result = self.__db.execute(
+            ('insert into {table} ({columns}) '
+             'values ({values})').format(
+                table=table_name,
+                columns=','.join(
+                    ['`' + col + '`' for col in params]
+                ),
+                values=','.join(
+                    ['%%(%s)s' % col for col in params]
+                )
+            ),
+            params
+        )
+
+        self.__clear_link_data()
         return result['last_insert_id']
 
     def update(self, *args, **kwargs):
