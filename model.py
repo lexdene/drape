@@ -426,13 +426,27 @@ class LinkedModel(object):
         ''' 构建条件字符串的一段 '''
         if key == '__or':
             if isinstance(value, dict):
+                return '(%s)' % self.__build_condition_string(
+                    value,
+                    self.RELATION_OR
+                )
+            elif isinstance(value, (tuple, list)):
+                return '(%s)' % self.RELATION_OR.join(
+                    (
+                        self.__build_condition_string(vp)
+                        for vp in value
+                    )
+                )
+            else:
                 raise TypeError(
-                    'value after `or` must be dict. got type:%s, value:%s' % (
+                    (
+                        'value after `or` must be dict or list.'
+                        ' got type:%s, value:%s'
+                    ) % (
                         value.__class__,
                         value
                     )
                 )
-            return '(%s)' % self.__build_condition_string(value, RELATION_OR)
         elif key == '__not':
             if isinstance(value, dict):
                 raise TypeError(
