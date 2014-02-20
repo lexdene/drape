@@ -3,6 +3,7 @@
 
 from render import json
 
+# response codes
 OK = '200 OK'
 REDIRECT = '301 Moved Permanently'
 BAD_REQUEST = '400 Bad request'
@@ -10,6 +11,9 @@ FORBIDDEN = '403 Forbidden'
 NOT_FOUND = '404 Not Found'
 NOT_ALLOWED = '405 Method Not Allowed'
 ERROR = '500 Internal Server Error'
+
+# response headers
+CONTENT_TYPE = 'Content-Type'
 
 
 def get_desc_by_code(status_code):
@@ -34,7 +38,7 @@ class Response(object):
         self.__headers = dict()
         if headers:
             for key, value in headers.iteritems():
-                self.__headers[key] = value
+                self.__headers[key] = str(value)
 
         self.__body = body
 
@@ -85,7 +89,7 @@ class Response(object):
 def json_response(obj, headers=None, status=OK):
     if headers is None:
         headers = {}
-    headers['Content-Type'] = 'application/json; charset=utf-8'
+    headers[CONTENT_TYPE] = 'application/json; charset=utf-8'
     return Response(
         status=status,
         headers=headers,
@@ -96,7 +100,7 @@ def json_response(obj, headers=None, status=OK):
 def plaintext_response(obj):
     return Response(
         headers={
-            'Content-Type': 'text/plain; charset=utf-8',
+            CONTENT_TYPE: 'text/plain; charset=utf-8',
         },
         body=str(obj)
     )
