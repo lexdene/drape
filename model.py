@@ -499,7 +499,7 @@ class LinkedModel(object):
 
                 # switch operator
                 if operator == 'in':
-                    if isinstance(value, tuple):
+                    if not isinstance(value, tuple):
                         raise TypeError(
                             ('value after `in` must be tuple.'
                              'got type:%s, value:%s') % (
@@ -511,7 +511,7 @@ class LinkedModel(object):
                     return '%s in (%s)' % (
                         key,
                         ','.join([
-                            self.__add_param(
+                            '%%(%s)s' % self.__add_param(
                                 '%s_%d' % (key, i),
                                 value_part
                             )
