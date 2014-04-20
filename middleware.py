@@ -73,9 +73,8 @@ class ExceptionTraceback(Base):
     def process_exception(self, exception):
         body = ''
         if config.SYSTEM_IS_DEBUG:
-            body += 'controller path: %s/%s\n' % (
-                self._request.module_name(),
-                self._request.controller_name()
+            body += 'url: %s\n' % (
+                self._request.url(),
             )
             body += traceback.format_exc()
 
@@ -157,40 +156,19 @@ class ControllerRunner(Base):
     def process_request(self, request):
         super(ControllerRunner, self).process_request(request)
 
-        module_name = request.module_name()
-        controller_name = request.controller_name()
+        path = request.path()
+        method = request.method()
 
-        if not module_name:
-            module_name = config.DEFAULT_MOD
-
-        try:
-            module = import_module('app.controller.%s' % module_name)
-        except ImportError as err:
-            if err.args[0] == 'No module named %s' % module_name:
-                raise http.NotFound(path)
-            else:
-                raise
-
-        if not controller_name:
-            controller_name = getattr(
-                module,
-                'DEFAULT_CONTROLLER',
-                config.DEFAULT_CONTROLLER
-            )
-
-        controller = getattr(
-            module,
-            controller_name,
-            None
-        )
+        controller = None
+        import app.routes
+        for route in app.routes.routes:
+            controller = route.match(path, method)
+            if controller:
+                break
 
         if not controller:
             raise http.NotFound(path)
 
-        request.controller_path = '%s/%s' % (
-            module_name,
-            controller_name
-        )
         response_obj = controller(request)
         if isinstance(response_obj, response.Response):
             return response_obj

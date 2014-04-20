@@ -1,7 +1,6 @@
 ''' application '''
 
-import request
-import middleware
+from . import request, middleware
 
 class Base(object):
     ''' base application '''

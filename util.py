@@ -87,3 +87,7 @@ def _tile_data(source_data):
             part_data[key_parted] = value
 
     return target_data
+
+
+def pluralize(word):
+    return word + 's'

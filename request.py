@@ -1,49 +1,37 @@
 # -*- coding: utf-8 -*-
-''' 封闭请求数据 '''
+''' 封装请求数据 '''
 
 import cgi
+
+GET = 'GET'
+POST = 'POST'
+DELETE = 'DELETE'
+PUT = 'PUT'
+
 
 class Request(object):
     ''' request object '''
     def __init__(self, env):
         self.env = env
 
-        self.__field_storage = None
-        self.__param_dict = dict()
-        self.__url_path = ''
+        self.__path = '' # only path
+        self.__url = '' # path and query string
 
-        self._run()
+        self.__field_storage = None
+        self.__params = dict()
+
+        self.__run()
         
-    def _run(self):
+    def __run(self):
         ''' process params in env '''
+        # path
+        self.__path = self.env.get('PATH_INFO')
+
         # url path
-        path = self.env.get('PATH_INFO')
-        self.__url_path = path
+        self.__url_path = self.__path
         query = self.env.get('QUERY_STRING')
         if not query is None and len(query) > 0 :
-            self.__url_path += '?'+query
-        
-        # controller path
-        # first item is empty string
-        # path_splits must be shorter than 20
-        path_splits = path.split('/')[1:21]
-        
-        if len(path_splits) > 0:
-            self.__module_name = path_splits[0]
-        else:
-            self.__module_name = None
-
-        if len(path_splits) > 1:
-            self.__controller_name = path_splits[1]
-        else:
-            self.__controller_name = None
-
-        if len(path_splits) > 2:
-            # path params
-            for i in range(2, len(path_splits) - 1, 2):
-                key = path_splits[i]
-                value = path_splits[i + 1]
-                self.__param_dict[key] = value
+            self.__url_path += '?'+ query
         
         # field storage
         self.__field_storage = cgi.FieldStorage(
@@ -56,41 +44,40 @@ class Request(object):
             if key[-2:] == '[]':
                 real_key = key[:-2]
                 if isinstance(value, list):
-                    self.__param_dict[real_key] = [
+                    self.__params[real_key] = [
                         v.value if v.filename is None else v
                         for v in value
                     ]
                 else:
                     realvalue = value.value if value.filename is None else value
-                    self.__param_dict[real_key] = [realvalue]
+                    self.__params[real_key] = [realvalue]
             else:
                 if isinstance(value, list):
                     value = value[-1]
                 # file or string
                 if value.filename is None:
-                    self.__param_dict[key] = value.value
+                    self.__params[key] = value.value
                 else:
-                    self.__param_dict[key] = value
+                    self.__params[key] = value
         
     def __getattr__(self, key):
         return self.env.get(key, None)
-        
+
+    def method(self):
+        return self.REQUEST_METHOD
+
     def root_path(self):
         ''' WEB ROOT '''
         return self.SCRIPT_NAME
-        
-    def url_path(self):
-        ''' full url '''
-        return self.__url_path
-        
-    def module_name(self):
-        ''' module name '''
-        return self.__module_name
 
-    def controller_name(self):
-        ''' class name '''
-        return self.__controller_name
+    def path(self):
+        ''' only path '''
+        return self.__path
+
+    def url(self):
+        ''' path and query string '''
+        return self.__url
 
     def params(self):
         ''' request params '''
-        return self.__param_dict
+        return self.__params

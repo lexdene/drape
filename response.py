@@ -69,9 +69,9 @@ class Response(object):
         for key, value in self.__headers.iteritems():
             if isinstance(value, list):
                 for value_item in value:
-                    yield key, value_item
+                    yield key, str(value_item)
             else:
-                yield key, value
+                yield key, str(value)
 
     def body(self):
         ''' 响应主体 '''
@@ -82,11 +82,12 @@ class Response(object):
         return name in self.__headers
 
 
-def json_response(obj):
+def json_response(obj, headers=None):
+    if headers is None:
+        headers = {}
+    headers['Content-Type'] = 'application/json; charset=utf-8'
     return Response(
-        headers={
-            'Content-Type': 'application/json; charset=utf-8',
-        },
+        headers=headers,
         body=json(obj)
     )
 
