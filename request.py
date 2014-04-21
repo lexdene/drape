@@ -28,10 +28,10 @@ class Request(object):
         self.__path = self.env.get('PATH_INFO')
 
         # url path
-        self.__url_path = self.__path
+        self.__url = self.__path
         query = self.env.get('QUERY_STRING')
         if not query is None and len(query) > 0 :
-            self.__url_path += '?'+ query
+            self.__url += '?'+ query
         
         # field storage
         self.__field_storage = cgi.FieldStorage(
