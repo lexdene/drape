@@ -28,12 +28,12 @@ SESSION_SECRET_KEY = 'drape_web_framework'
 TEMPLATE_DIR = 'template'
 
 MIDDLEWARES = [
-    'drape.middleware.ControllerRunner',
-    'drape.middleware.HttpErrorProcessor',
-    'drape.middleware.ExtraHeaders',
-    'drape.middleware.SessionWrapper',
-    'drape.middleware.CookieWrapper',
-    'drape.middleware.ExceptionTraceback'
+    'drape.middleware.run_controller',
+    'drape.middleware.httperror_processor',
+    'drape.middleware.add_extra_headers',
+    'drape.middleware.add_session',
+    'drape.middleware.add_cookie',
+    'drape.middleware.exception_traceback',
 ]
 
 

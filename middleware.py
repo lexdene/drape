@@ -2,102 +2,62 @@
 import sys
 import traceback
 
-import config
-import response
-import http
-import cookie
-import session
-from . import version
-from import_util import import_obj, import_module
+from . import config, response, http, cookie, session, version
+from .import_util import import_obj
 
 
 def run(request):
     ''' run all middlewares '''
-    middlewares = list(config.MIDDLEWARES)
+    ctrl = None
+    for name in list(config.MIDDLEWARES):
+        middleware_func = import_obj(name)
+        ctrl = middleware_func(ctrl)
 
-    return recursion_run(request, middlewares)
-
-
-def recursion_run(request, middlewares):
-    ''' run one middleware and recursion others '''
-    if not middlewares:
+    if ctrl is None:
         return None
-    first_middleware_class_name = middlewares.pop()
-    first_middleware_class = import_obj(first_middleware_class_name)
-    first_middleware = first_middleware_class()
 
-    try:
-        response_obj = first_middleware.process_request(request)
-        if response_obj:
-            return response_obj
-
-        response_obj = recursion_run(request, middlewares)
-        first_middleware.process_response(response_obj)
-        return response_obj
-    except Exception as err:
-        response_obj = first_middleware.process_exception(err)
-        if response_obj:
-            return response_obj
-        else:
-            raise
+    return ctrl(request)
 
 
-class Base(object):
-    ''' base for middleware class '''
-    def __init__(self):
-        self._request = None
-        self._response = None
-
-    def process_request(self, request):
-        '''
-            process request before run
-            stop other middlewares by returning a response object
-        '''
-        self._request = request
-
-    def process_response(self, response_obj):
-        '''
-            process response after inner return
-        '''
-        pass
-
-    def process_exception(self, exception):
-        '''
-            process exception throw by inner run
-        '''
-        pass
-
-
-class ExceptionTraceback(Base):
+def exception_traceback(func):
     ''' catch all exception and print them '''
-    def process_exception(self, exception):
-        body = ''
-        if config.SYSTEM_IS_DEBUG:
-            body += 'url: %s\n' % (
-                self._request.url(),
+    def process_exception(request):
+        ' catch exception '
+        try:
+            return func(request)
+        except Exception:
+            body = ''
+            if config.SYSTEM_IS_DEBUG:
+                body += 'url: %s\n' % (
+                    request.url(),
+                )
+                body += traceback.format_exc()
+
+                body += 'environ:\n'
+                for key, value in request.env.iteritems():
+                    body += '%s => %s\n' % (key, value)
+
+            else:
+                body = response.ERROR
+
+            return response.Response(
+                status=response.ERROR,
+                headers={
+                    'Content_Type': 'text/plain; charset=utf-8'
+                },
+                body=body
             )
-            body += traceback.format_exc()
 
-            body += 'environ:\n'
-            for key, value in self._request.env.iteritems():
-                body += '%s => %s\n' % (key, value)
-
-        else:
-            body = response.ERROR
-
-        return response.Response(
-            status=response.ERROR,
-            headers={
-                'Content_Type': 'text/plain; charset=utf-8'
-            },
-            body=body
-        )
+    return process_exception
 
 
-class HttpErrorProcessor(Base):
+def httperror_processor(func):
     ''' catch all http error and make http response '''
-    def process_exception(self, exception):
-        if isinstance(exception, http.HTTPError):
+    def process_exception(request):
+        ' catch http error '
+        try:
+            return func(request)
+        except http.HTTPError as exception:
             return response.Response(
                 status=exception.description,
                 headers={
@@ -106,39 +66,47 @@ class HttpErrorProcessor(Base):
                 body=exception.body()
             )
 
+    return process_exception
 
-class CookieWrapper(Base):
+
+def add_cookie(func):
     ''' start cookie '''
-    def process_request(self, request):
-        super(CookieWrapper, self).process_request(request)
-
+    def process_request(request):
+        ' add cookie in request '
         request.cookie = cookie.Cookie(request)
+        rsps = func(request)
+        request.cookie.flush(rsps)
 
-    def process_response(self, response_obj):
-        self._request.cookie.flush(response_obj)
+        return rsps
+
+    return process_request
 
 
-class SessionWrapper(Base):
+def add_session(func):
     ''' start session '''
-    def process_request(self, request):
-        super(SessionWrapper, self).process_request(request)
-
+    def process_request(request):
+        ' add session in request '
         request.session = session.Session(request)
+        rsps = func(request)
+        request.session.save()
 
-    def process_response(self, response_obj):
-        self._request.session.save()
+        return rsps
+
+    return process_request
 
 
-class ExtraHeaders(Base):
+def add_extra_headers(func):
     ''' add extra headers '''
-    def process_response(self, response_obj):
-        if not response_obj.has_header('Content-Type'):
-            response_obj.set_header(
+    def process_response(request):
+        ' add headers '
+        rsps = func(request)
+        if not rsps.has_header('Content-Type'):
+            rsps.set_header(
                 'Content-Type',
                 'text/html; charset=utf-8'
             )
 
-        response_obj.set_header(
+        rsps.set_header(
             'X-Powered-By',
             'Python: %s, drape: %s' % (
                 '%s.%s.%s' % (
@@ -150,12 +118,15 @@ class ExtraHeaders(Base):
             )
         )
 
+        return rsps
 
-class ControllerRunner(Base):
+    return process_response
+
+
+def run_controller(_):
     ''' find controller by path and run '''
-    def process_request(self, request):
-        super(ControllerRunner, self).process_request(request)
-
+    def process_request(request):
+        ' find controller and run '
         path = request.path()
         method = request.method()
 
@@ -169,8 +140,10 @@ class ControllerRunner(Base):
         if not controller:
             raise http.NotFound(path)
 
-        response_obj = controller(request)
-        if isinstance(response_obj, response.Response):
-            return response_obj
+        rsps = controller(request)
+        if isinstance(rsps, response.Response):
+            return rsps
         else:
-            raise ValueError('not a response object: %s' % response_obj)
+            raise ValueError('not a response object: %s' % rsps)
+
+    return process_request
