@@ -4,15 +4,32 @@ import re
 from .util import pluralize
 from .request import GET, POST, DELETE, PUT
 
+
 class RouterBase(object):
+    def __init__(self):
+        import app.controller
+        self._model = app.controller
+
     def match(self, path, method):
         return None
 
 
+KEY_REGEXP_MAP = {
+    'number': '[0-9]',
+    'word': '[a-z]'
+}
+
+
 class Resource(RouterBase):
-    def __init__(self, name):
+    def __init__(self, name, key=None, key_type='number'):
         self.__name = name
 
+        if key is None:
+            key = '%s_id' % self.__name
+        self.__param = {
+            'key': key,
+            'key_type': key_type
+        }
         self.__routes = list(self.__generate_routes())
 
     def match(self, path, method):
@@ -39,9 +56,10 @@ class Resource(RouterBase):
             }
         )
 
-        singular_path = r'^/%s/(?P<%s_id>[0-9]+)$' % (
+        singular_path = r'^/%s/(?P<%s>%s+)$' % (
             self.__name,
-            self.__name
+            self.__param['key'],
+            KEY_REGEXP_MAP[self.__param['key_type']]
         )
 
         yield (
@@ -53,11 +71,8 @@ class Resource(RouterBase):
             }
         )
 
-    @classmethod
-    def controller(cls, controller_name, action_name, params):
-        import app.controller
-
-        module = getattr(app.controller, controller_name, None)
+    def controller(self, controller_name, action_name, params):
+        module = getattr(self._model, controller_name, None)
         if module is None:
             return None
 
@@ -69,3 +84,28 @@ class Resource(RouterBase):
             return action(request, **params)
 
         return resource_controller
+
+
+class Group(RouterBase):
+    def __init__(self, name, *children):
+        super(Group, self).__init__()
+        self.__name = name
+        self.__children = children
+
+        for child in self.__children:
+            child._model = getattr(self._model, self.__name, None)
+
+        self.__path_reg = re.compile(r'^/%s/(?P<sub>.*)$' % self.__name)
+
+    def match(self, path, method):
+        result = self.__path_reg.match(path)
+
+        if result:
+            subpath = '/' + result.group('sub')
+            for child in self.__children:
+                ctrl = child.match(
+                    subpath,
+                    method
+                )
+                if ctrl:
+                    return ctrl

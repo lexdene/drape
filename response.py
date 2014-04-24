@@ -82,11 +82,12 @@ class Response(object):
         return name in self.__headers
 
 
-def json_response(obj, headers=None):
+def json_response(obj, headers=None, status=OK):
     if headers is None:
         headers = {}
     headers['Content-Type'] = 'application/json; charset=utf-8'
     return Response(
+        status=status,
         headers=headers,
         body=json(obj)
     )
