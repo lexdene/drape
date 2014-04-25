@@ -13,6 +13,23 @@ class RouterBase(object):
     def match(self, path, method):
         return None
 
+    def _controller(self, controller_name, action_name, params):
+        if controller_name:
+            module = getattr(self._model, controller_name, None)
+        else:
+            module = self._model
+        if module is None:
+            return None
+
+        action = getattr(module, action_name, None)
+        if action is None:
+            return None
+
+        def resource_controller(request):
+            return action(request, **params)
+
+        return resource_controller
+
 
 KEY_REGEXP_MAP = {
     'number': '[0-9]',
@@ -37,7 +54,7 @@ class Resource(RouterBase):
             match = path_reg.match(path)
 
             if match and method in action_map:
-                return self.controller(
+                return self._controller(
                     self.__name,
                     action_map[method],
                     match.groupdict()
@@ -71,20 +88,6 @@ class Resource(RouterBase):
             }
         )
 
-    def controller(self, controller_name, action_name, params):
-        module = getattr(self._model, controller_name, None)
-        if module is None:
-            return None
-
-        action = getattr(module, action_name, None)
-        if action is None:
-            return None
-
-        def resource_controller(request):
-            return action(request, **params)
-
-        return resource_controller
-
 
 class Group(RouterBase):
     def __init__(self, name, *children):
@@ -109,3 +112,22 @@ class Group(RouterBase):
                 )
                 if ctrl:
                     return ctrl
+
+
+class Url(RouterBase):
+    def __init__(self, url, method, name):
+        super(Url, self).__init__()
+
+        self.__url_reg = re.compile(url)
+        self.__method = method
+        self.__name = name
+
+    def match(self, path, method):
+        if method == self.__method:
+            result = self.__url_reg.match(path)
+            if result:
+                return self._controller(
+                    None,
+                    self.__name,
+                    result.groupdict()
+                )
