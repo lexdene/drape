@@ -39,6 +39,7 @@ KEY_REGEXP_MAP = {
 
 class Resource(RouterBase):
     def __init__(self, name, key=None, key_type='number'):
+        super(Resource, self).__init__()
         self.__name = name
 
         if key is None:
