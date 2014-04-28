@@ -264,7 +264,7 @@ class LinkedModel(object):
                 '{k}=%({k})s'.format(
                     k=self.__add_param(key, value)
                 )
-                for key, value in params.iteritems()
+                for key, value in params.items()
                 if key in column_list
             )),
             where=self.__build_where_string()
@@ -386,10 +386,7 @@ class LinkedModel(object):
         # filter by reflect tables
         if reflect_tables:
             reflect_tables = set(reflect_tables)
-            table_alias_list = filter(
-                lambda ta: ta[1] in reflect_tables,
-                table_alias_list
-            )
+            table_alias_list = [ta for ta in table_alias_list if ta[1] in reflect_tables]
 
         # self table alias
         self_table_alias = self.__alias if self.__alias else self.__table_name
@@ -450,7 +447,7 @@ class LinkedModel(object):
 
         return relation.join([
             self.__build_condition_part(key, value)
-            for key, value in condiction.iteritems()
+            for key, value in condiction.items()
         ])
 
     def __build_condition_part(self, key, value):
@@ -490,7 +487,7 @@ class LinkedModel(object):
         else:
             # normal key
             # key as field name
-            if isinstance(value, (basestring, int, long,
+            if isinstance(value, (str, int,
                                   datetime.datetime)):
                 param_key = self.__add_param(key, value)
                 return '%s = %%(%s)s' % (key, param_key)

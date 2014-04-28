@@ -2,7 +2,7 @@
 ''' http functions '''
 from functools import wraps
 
-import response
+from . import response
 
 class HTTPError(Exception):
     ''' 所有http错误的基类 '''

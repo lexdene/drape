@@ -7,7 +7,7 @@ def jinja2(templatePath, vardict):
     global _jinja2_env
     if _jinja2_env is None:
         import jinja2
-        import util
+        from . import util
         util.mkdir_not_existing('data/jinja_cache')
         _jinja2_env = jinja2.Environment(
             loader=jinja2.FileSystemLoader(config.TEMPLATE_DIR),

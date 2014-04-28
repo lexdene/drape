@@ -34,7 +34,7 @@ class WsgiApplication(Base):
 
         # body
         body = response_obj.body()
-        if isinstance(body, unicode):
-            return body.encode('utf-8')
+        if isinstance(body, str):
+            yield body.encode('utf-8')
         else:
-            return body
+            yield body

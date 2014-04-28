@@ -37,7 +37,7 @@ class Cookie(object):
 
     def iteritems(self):
         ''' iter cookie data '''
-        return self.__requestdata.iteritems()
+        return iter(self.__requestdata.items())
 
     def add(self, key, value, path='/', expires=None, domain=None):
         ''' add cookie data '''

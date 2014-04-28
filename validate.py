@@ -5,7 +5,7 @@ import re
 
 def validate_params(params, validators):
     validate_results = dict()
-    for key, item in validators.iteritems():
+    for key, item in validators.items():
         field = _Field()
         field.value = params.get(key)
         field.params = params

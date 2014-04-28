@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 ''' 响应相关模块 '''
 
-from render import json
+from .render import json
 
 # response codes
 OK = '200 OK'
@@ -37,7 +37,7 @@ class Response(object):
 
         self.__headers = dict()
         if headers:
-            for key, value in headers.iteritems():
+            for key, value in headers.items():
                 self.__headers[key] = str(value)
 
         self.__body = body
@@ -70,7 +70,7 @@ class Response(object):
 
     def headers(self):
         ''' 遍历所有的头部信息 '''
-        for key, value in self.__headers.iteritems():
+        for key, value in self.__headers.items():
             if isinstance(value, list):
                 for value_item in value:
                     yield key, str(value_item)

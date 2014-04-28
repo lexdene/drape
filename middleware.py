@@ -34,7 +34,7 @@ def exception_traceback(func):
                 body += traceback.format_exc()
 
                 body += 'environ:\n'
-                for key, value in request.env.iteritems():
+                for key, value in request.env.items():
                     body += '%s => %s\n' % (key, value)
 
             else:

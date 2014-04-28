@@ -5,8 +5,8 @@ import base64
 import pickle
 import os
 
-import config
-import util
+from . import config
+from . import util
 
 
 class StoreBase(object):
@@ -65,9 +65,10 @@ class FileStore(StoreBase):
         path = '%s/%s' % (directory, key)
         if not os.path.isfile(path):
             return None
-        file_obj = open(path, 'r')
-        content = file_obj.read(BUF_SIZE)
-        file_obj.close()
+
+        with open(path, 'rb') as fin:
+            content = fin.read(BUF_SIZE)
+
         return content
 
     def __setitem__(self, key, value):
@@ -75,9 +76,9 @@ class FileStore(StoreBase):
         util.mkdir_not_existing(directory)
 
         path = '%s/%s' % (directory, key)
-        fout = open(path, 'w')
-        fout.write(value)
-        fout.close()
+
+        with open(path, 'wb') as fout:
+            fout.write(value)
 
     def cleanup(self):
         directory = config.SESSION_FILE_DIRECTORY
@@ -205,7 +206,7 @@ class Session(object):
 
     def iteritems(self):
         ''' iter the data '''
-        for key, value in self.__data.iteritems():
+        for key, value in self.__data.items():
             if key[0] != '_':
                 yield (key, value)
 

@@ -8,25 +8,20 @@ from .request import GET, POST, DELETE, PUT
 class RouterBase(object):
     def __init__(self):
         import app.controller
-        self._model = app.controller
+        self._module = app.controller
 
     def match(self, path, method):
         return None
 
-    def _controller(self, controller_name, action_name, params):
-        if controller_name:
-            module = getattr(self._model, controller_name, None)
-        else:
-            module = self._model
-        if module is None:
-            return None
-
-        action = getattr(module, action_name, None)
-        if action is None:
-            return None
+    def _controller(self, controller_name, params):
+        controller = self._module
+        for name_part in controller_name.split('.'):
+            controller = getattr(controller, name_part, None)
+            if controller is None:
+                return None
 
         def resource_controller(request):
-            return action(request, **params)
+            return controller(request, **params)
 
         return resource_controller
 
@@ -56,8 +51,10 @@ class Resource(RouterBase):
 
             if match and method in action_map:
                 return self._controller(
-                    self.__name,
-                    action_map[method],
+                    '%s.%s' % (
+                        self.__name,
+                        action_map[method],
+                    ),
                     match.groupdict()
                 )
 
@@ -97,7 +94,7 @@ class Group(RouterBase):
         self.__children = children
 
         for child in self.__children:
-            child._model = getattr(self._model, self.__name, None)
+            child._module = getattr(self._module, self.__name, None)
 
         self.__path_reg = re.compile(r'^/%s/(?P<sub>.*)$' % self.__name)
 
@@ -128,7 +125,6 @@ class Url(RouterBase):
             result = self.__url_reg.match(path)
             if result:
                 return self._controller(
-                    None,
                     self.__name,
                     result.groupdict()
                 )

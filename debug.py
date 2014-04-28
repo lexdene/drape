@@ -2,7 +2,7 @@
 import logging
 import datetime
 
-import util
+from . import util
 
 _logger = None
 

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import urllib
+import urllib.request, urllib.parse, urllib.error
 import hashlib
 import re
 import functools
@@ -10,23 +10,23 @@ import os
 
 
 def urlquote(s):
-    return urllib.quote(s)
+    return urllib.parse.quote(s)
 
 
 def md5sum(s):
     m = hashlib.md5()
-    m.update(s)
+    m.update(s.encode('utf-8'))
     return m.hexdigest()
 
 
 def sha1sum(s):
     hasher = hashlib.sha1()
-    hasher.update(s)
+    hasher.update(s.encode('utf-8'))
     return hasher.hexdigest()
 
 
 def toInt(s, default=None):
-    if isinstance(s, (int, long)):
+    if isinstance(s, int):
         return s
     if isinstance(s, str):
         re_num = r'^-?[0-9]*$'
@@ -38,16 +38,15 @@ def toInt(s, default=None):
 
 
 def isInt(v):
-    return isinstance(v, (int, long))
+    return isinstance(v, int)
 
 
 def to_unicode(obj, encoding='utf-8', errors='replace'):
     ''' convert a 'str' to 'unicode' '''
-    if isinstance(obj, basestring):
-        if not isinstance(obj, unicode):
-            obj = unicode(obj, encoding, errors)
+    if isinstance(obj, str):
+        obj = str(obj, encoding, errors)
     else:
-        obj = unicode(str(obj), encoding, errors)
+        obj = str(str(obj), encoding, errors)
     return obj
 
 
@@ -78,7 +77,7 @@ def tile_list_data(source_list_data):
 
 def _tile_data(source_data):
     target_data = {}
-    for key, value in source_data.iteritems():
+    for key, value in source_data.items():
         key_parted_list = key.split('.')
         part_data = target_data
         initial = key_parted_list[0:-1]
