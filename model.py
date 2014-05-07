@@ -169,11 +169,14 @@ class LinkedModel(object):
 
     def find(self, *args, **kwargs):
         ''' 获取一条记录, 参数见select '''
-        result = self.limit(1).select(*args, **kwargs)
-        if len(result) < 1:
-            return None
-        else:
-            return result[0]
+        result = self.limit(1).select(
+            query_options={
+                'fetchone': True,
+            },
+            *args,
+            **kwargs
+        )
+        return result
 
     def count(self, count_field=None):
         '''

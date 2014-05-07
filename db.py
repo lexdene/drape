@@ -45,13 +45,6 @@ class Db(object):
             fetchone: 是否只获取一行数据, 默认是False
             bydict: 是否以字典形式返回查询结果, 默认是True
         '''
-        def make_dict(column_names, row):
-            ''' 将查询结果按照列名组装成字典 '''
-            result_dict = {}
-            for i, column in enumerate(column_names):
-                result_dict[column] = row[i]
-            return result_dict
-
         cursor = self.__conn.cursor()
         try:
             cursor.execute(sql, params)
@@ -63,9 +56,9 @@ class Db(object):
         if bydict:
             column_names = cursor.column_names
             if fetchone:
-                return make_dict(column_names, cursor.fetchone())
+                return _make_dict(column_names, cursor.fetchone())
             else:
-                return [make_dict(column_names, row) for row in cursor]
+                return [_make_dict(column_names, row) for row in cursor]
         else:
             if fetchone:
                 return cursor.fetchone()
@@ -88,3 +81,14 @@ class Db(object):
             'last_insert_id': cursor.lastrowid,
             'row_count': rowcount
         }
+
+
+def _make_dict(column_names, row):
+    ''' 将查询结果按照列名组装成字典 '''
+    if row is None:
+        return None
+
+    result_dict = {}
+    for i, column in enumerate(column_names):
+        result_dict[column] = row[i]
+    return result_dict
