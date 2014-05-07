@@ -41,24 +41,6 @@ def isInt(v):
     return isinstance(v, int)
 
 
-def to_unicode(obj, encoding='utf-8', errors='replace'):
-    ''' convert a 'str' to 'unicode' '''
-    if isinstance(obj, str):
-        obj = str(obj, encoding, errors)
-    else:
-        obj = str(str(obj), encoding, errors)
-    return obj
-
-
-def utf8(f):
-    @functools.wraps(f)
-    def rf(*argc, **argv):
-        ret = f(*argc, **argv)
-        return to_unicode(ret)
-    return rf
-
-
-@utf8
 def random_str(length=8, chars=string.ascii_uppercase + string.digits):
     return ''.join(random.choice(chars) for x in range(length))
 
