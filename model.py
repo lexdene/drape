@@ -217,6 +217,20 @@ class LinkedModel(object):
         count = self.found_rows()
         return result, count
 
+    def exist(self):
+        ''' 符合条件的内容是否存在 '''
+        self.limit(1)
+        result = self.select(
+            fields=['1 as one'],
+            query_options={
+                'fetchone': True,
+                'bydict': False
+            },
+            field_reflect_type=self.REFLECT_NO
+        )
+
+        return bool(result)
+
     def insert(self, *args, **kwargs):
         ''' 执行insert操作 '''
         params = dict()
