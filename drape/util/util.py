@@ -79,10 +79,6 @@ def _tile_data(source_data):
 
 
 
-def pluralize(word):
-    return word + 's'
-
-
 def pick_dict(source, key_list):
     '''
         source是一个dict

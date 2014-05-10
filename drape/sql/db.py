@@ -3,39 +3,17 @@
     drape的db模块
     封装了部分数据库底层的操作
 '''
-from . import config, debug
+import mysql.connector
 
+from .. import debug
 
 class Db(object):
     ''' db对象 '''
-    def __init__(self):
-        if config.DB_DRIVER == 'mysql':
-            import mysql.connector
-            self.__driver = mysql.connector
+    def __init__(self, connect_args):
+        self.__conn = mysql.connector.connect(**connect_args)
 
-            self.__conn = self.__driver.connect(
-                host=config.DB_HOST,
-                port=config.DB_PORT,
-                user=config.DB_USER,
-                password=config.DB_PASSWORD,
-                database=config.DB_NAME,
-                charset=config.DB_CHARSET
-            )
-        else:
-            raise ValueError(
-                'no such driver: %s' % config.DB_DRIVER
-            )
-
-    @classmethod
-    def singleton(cls):
-        ''' 获取单例 '''
-        if not hasattr(cls, '_instance'):
-            cls._instance = cls()
-        return cls._instance
-
-    def table_prefix(self):
-        ''' 从配置中获取数据表前缀 '''
-        return config.DB_TABLE_PREFIX
+        self.log_sql = False
+        self.table_prefix = ''
 
     def query(self, sql, params=None, fetchone=False, bydict=True):
         '''
@@ -49,7 +27,7 @@ class Db(object):
         try:
             cursor.execute(sql, params)
         finally:
-            if config.DB_LOG_SQL:
+            if self.log_sql:
                 logger = debug.get_logger()
                 logger.debug(sql)
 
@@ -73,7 +51,7 @@ class Db(object):
         try:
             rowcount = cursor.execute(sql, params)
         finally:
-            if config.DB_LOG_SQL:
+            if self.log_sql:
                 logger = debug.get_logger()
                 logger.debug(sql)
 

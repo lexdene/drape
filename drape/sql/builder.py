@@ -2,7 +2,7 @@
 
 import datetime
 
-from . import db, util
+from .. import util
 
 
 class FieldParam(object):
@@ -11,12 +11,12 @@ class FieldParam(object):
         self.name = name
 
 
-class LinkedModel(object):
+class LinkedBuilder(object):
     __cache = {}
 
-    def __init__(self, table_name):
-        self.__table_name = table_name
-        self.__db = db.Db.singleton()
+    def __init__(self, table, db_obj):
+        self.__table_name = table.table_name
+        self.__db = db_obj
 
         # clear link data
         self.__clear_link_data()
@@ -108,7 +108,8 @@ class LinkedModel(object):
 
     def select(self, fields=None, sql_options=None, query_options=dict(),
                field_reflect_type=REFLECT_YES,
-               reflect_tables=None):
+               reflect_tables=None,
+               return_sql=False):
         '''
             构造select语句并执行
             fields:              返回的字段, 默认为空
@@ -145,8 +146,7 @@ class LinkedModel(object):
         group_string = self.__build_group_string()
 
         # query result
-        result = self.__db.query(
-            ("select{option}{field}\n"
+        sql = ("select{option}{field}\n"
              "from {table}{join}{where}{group}{order}{limit}").format(
                 option=option_string,
                 field=field_string,
@@ -156,10 +156,16 @@ class LinkedModel(object):
                 group=group_string,
                 order=order_string,
                 limit=limit_string
-            ),
-            self.__params,
-            **query_options
-        )
+            )
+
+        if return_sql:
+            result = sql
+        else:
+            result = self.__db.query(
+                sql,
+                self.__params,
+                **query_options
+            )
 
         # clear
         self.__clear_link_data()
@@ -243,7 +249,7 @@ class LinkedModel(object):
         if kwargs:
             params.update(kwargs)
 
-        table_name = self.__db.table_prefix() + self.__table_name
+        table_name = self.__db.table_prefix + self.__table_name
         result = self.__db.execute(
             ('insert into {table} ({columns}) '
              'values ({values})').format(
@@ -270,7 +276,7 @@ class LinkedModel(object):
         if kwargs:
             params.update(kwargs)
 
-        table_name = self.__db.table_prefix() + self.__table_name
+        table_name = self.__db.table_prefix + self.__table_name
 
         # column list
         column_list = self.__get_column_list(self.__table_name)
@@ -323,7 +329,7 @@ class LinkedModel(object):
             columns[table_name] = [
                 col['Field'] for col in self.__db.query(
                     "SHOW COLUMNS FROM `%s%s`" % (
-                        self.__db.table_prefix(),
+                        self.__db.table_prefix,
                         table_name
                     )
                 )
@@ -424,7 +430,7 @@ class LinkedModel(object):
 
     def __build_table_string(self):
         alias = self.__alias
-        table_name = self.__db.table_prefix() + self.__table_name
+        table_name = self.__db.table_prefix + self.__table_name
 
         return '`%s` as %s' % (
             table_name,
@@ -432,7 +438,7 @@ class LinkedModel(object):
         )
 
     def __build_join_string(self):
-        table_prefix = self.__db.table_prefix()
+        table_prefix = self.__db.table_prefix
         return ''.join([
             '\n' + '{join_type} join `{table}`{alias}{on}'.format(
                 join_type=join['join_type'],
