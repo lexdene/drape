@@ -28,3 +28,13 @@ class DemoTestCase(unittest.TestCase):
             self.assertEqual(d.data, 'asdfasdfasdf')
 
         self.assertEqual(d.data, 'asdfasdfasdf')
+
+    def testExceptElse(self):
+        try:
+            raise ValueError(1)
+        except ValueError:
+            self.assertTrue(True)
+        else:
+            self.assertTrue(False)
+        finally:
+            self.assertTrue(True)

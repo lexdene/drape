@@ -9,7 +9,8 @@ def setUp(self):
     connect_args = {
         'user': 'drape_test_user',
         'password': 'drape_test_123456',
-        'database': 'drape_test'
+        'database': 'drape_test',
+        'autocommit': True,
     }
 
     db_obj = db.Db(connect_args)
@@ -19,17 +20,42 @@ def setUp(self):
 class UserInfo(table.Table):
     def _define(self):
         self.string('username', null=False)
-        self.meta_times()
 
 class ModelTestCase(unittest.TestCase):
+    def setUp(self):
+        db_obj.execute('truncate table %s' % UserInfo().table_name)
+
     def testModel(self):
         user_builder = builder.LinkedBuilder(UserInfo(), db_obj)
         self.assertEqual(
             'select\n'
             '`user_infos`.`id`,\n'
-            '`user_infos`.`username`,\n'
-            '`user_infos`.`created_at`,\n'
-            '`user_infos`.`updated_at`\n'
+            '`user_infos`.`username`\n'
             'from `user_infos` as user_infos',
             user_builder.select(return_sql=True)
         )
+
+    def testTransaction(self):
+        user_builder = builder.LinkedBuilder(UserInfo(), db_obj)
+        with db_obj.transaction():
+            user_builder.insert(
+                username='elephant'
+            )
+            self.assertEqual(1, user_builder.count())
+
+        self.assertEqual(1, user_builder.count())
+
+        try:
+            with db_obj.transaction():
+                user_builder.insert(
+                    username='elephant2',
+                )
+                self.assertEqual(2, user_builder.count())
+
+                raise ValueError('to break transaction')
+        except ValueError:
+            self.assertTrue(True)
+        else:
+            self.assertTrue(False)
+
+        self.assertEqual(1, user_builder.count())

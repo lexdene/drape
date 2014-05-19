@@ -10,7 +10,7 @@ from .. import debug
 class Db(object):
     ''' db对象 '''
     def __init__(self, connect_args):
-        self.__conn = mysql.connector.connect(**connect_args)
+        self._conn = mysql.connector.connect(**connect_args)
 
         self.log_sql = False
         self.table_prefix = ''
@@ -23,7 +23,7 @@ class Db(object):
             fetchone: 是否只获取一行数据, 默认是False
             bydict: 是否以字典形式返回查询结果, 默认是True
         '''
-        cursor = self.__conn.cursor()
+        cursor = self._conn.cursor()
         try:
             cursor.execute(sql, params)
         finally:
@@ -47,7 +47,7 @@ class Db(object):
         '''
             执行一条sql语句
         '''
-        cursor = self.__conn.cursor()
+        cursor = self._conn.cursor()
         try:
             rowcount = cursor.execute(sql, params)
         finally:
@@ -60,6 +60,22 @@ class Db(object):
             'row_count': rowcount
         }
 
+    def transaction(self):
+        return Transaction(self)
+
+class Transaction(object):
+    def __init__(self, db_obj):
+        self.__db_obj = db_obj
+
+    def __enter__(self):
+        self.__db_obj._conn.start_transaction()
+        return self
+
+    def __exit__(self, errtype, errvalue, errtrace):
+        if errvalue:
+            self.__db_obj._conn.rollback()
+        else:
+            self.__db_obj._conn.commit()
 
 def _make_dict(column_names, row):
     ''' 将查询结果按照列名组装成字典 '''
