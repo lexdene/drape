@@ -132,7 +132,7 @@ def run_controller(_):
 
         controller = None
         import app.routes
-        for route in app.routes.routes:
+        for route in app.routes.ROUTES:
             controller = route.match(path, method)
             if controller:
                 break

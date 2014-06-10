@@ -128,3 +128,16 @@ class Url(RouterBase):
                     self.__name,
                     result.groupdict()
                 )
+
+    @classmethod
+    def create(cls, method, name):
+        url = '^/' + name.replace('.', '/') + '$'
+        return cls(url, method, name)
+
+    @classmethod
+    def get(cls, name):
+        return cls.create(GET, name)
+
+    @classmethod
+    def post(cls, name):
+        return cls.create(POST, name)

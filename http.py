@@ -63,16 +63,3 @@ class Forbidden(HTTPError):
     ''' 403 Forbidden '''
     def __init__(self):
         super(Forbidden, self).__init__(403)
-
-
-def post_only(func):
-    ''' 只接受POST请求 '''
-    @wraps(func)
-    def new_func(request):
-        ''' 检查 request method 是不是post '''
-        method = request.REQUEST_METHOD
-        if method == 'POST':
-            return func(request)
-        else:
-            raise NotAllowed
-    return new_func
