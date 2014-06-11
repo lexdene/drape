@@ -20,7 +20,7 @@ class Cookie(object):
     def _run(self):
         ''' read cookie data from request '''
         cookiestr = self.__request.HTTP_COOKIE
-        if not cookiestr is None:
+        if cookiestr is not None:
             part_list = cookiestr.split(';')
             for part in part_list:
                 part_splits = part.split('=', 2)
@@ -56,7 +56,7 @@ class Cookie(object):
         if 'relative' == path_type:
             path = self.__request.root_path() + path
 
-        if not expires is None:
+        if expires is not None:
             if 'relative' == expires_type:
                 expires = float(expires) + time.time()
             else:

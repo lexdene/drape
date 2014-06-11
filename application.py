@@ -2,6 +2,7 @@
 
 from . import request, middleware
 
+
 class Base(object):
     ''' base application '''
     def __init__(self):
@@ -14,6 +15,7 @@ class Base(object):
     def run(self, _env):
         ''' run for each request '''
         pass
+
 
 class WsgiApplication(Base):
     ''' application for wsgi '''

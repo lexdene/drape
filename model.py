@@ -315,7 +315,7 @@ class LinkedModel(object):
     def __get_column_list(self, table_name):
         cache = self.__class__.__cache
 
-        if not 'show_columns' in cache:
+        if 'show_columns' not in cache:
             cache['show_columns'] = dict()
 
         columns = cache['show_columns']
@@ -372,7 +372,7 @@ class LinkedModel(object):
                     self.__build_field_list_by_fields(fields)
                 )
         elif field_reflect_type == self.REFLECT_NO:
-            assert not fields is None
+            assert fields is not None
             field_list = self.__build_field_list_by_fields(fields)
         else:
             raise ValueError('no such reflect type: %s' % field_reflect_type)
@@ -403,7 +403,11 @@ class LinkedModel(object):
         # filter by reflect tables
         if reflect_tables:
             reflect_tables = set(reflect_tables)
-            table_alias_list = [ta for ta in table_alias_list if ta[1] in reflect_tables]
+            table_alias_list = [
+                ta
+                for ta in table_alias_list
+                if ta[1] in reflect_tables
+            ]
 
         # self table alias
         self_table_alias = self.__alias if self.__alias else self.__table_name

@@ -3,20 +3,22 @@ import sys
 import traceback
 
 from . import config, response, http, cookie, session, version
-from .import_util import import_obj
+
+
+_ctrl = None
 
 
 def run(request):
     ''' run all middlewares '''
-    ctrl = None
-    for name in list(config.MIDDLEWARES):
-        middleware_func = import_obj(name)
-        ctrl = middleware_func(ctrl)
+    global _ctrl
+    if _ctrl is None:
+        for middleware in _MIDDLEWARES:
+            _ctrl = middleware(_ctrl)
 
-    if ctrl is None:
+    if _ctrl is None:
         return None
 
-    return ctrl(request)
+    return _ctrl(request)
 
 
 def exception_traceback(func):
@@ -147,3 +149,13 @@ def run_controller(_):
             raise ValueError('not a response object: %s' % rsps)
 
     return process_request
+
+
+_MIDDLEWARES = [
+    run_controller,
+    httperror_processor,
+    add_extra_headers,
+    add_session,
+    add_cookie,
+    exception_traceback,
+]

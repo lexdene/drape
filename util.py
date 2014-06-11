@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import urllib.request, urllib.parse, urllib.error
+import urllib.parse
 import hashlib
 import re
 import functools
@@ -65,7 +65,7 @@ def _tile_data(source_data):
         initial = key_parted_list[0:-1]
 
         for key_parted in initial:
-            if not key_parted in part_data:
+            if key_parted not in part_data:
                 part_data[key_parted] = {}
             part_data = part_data[key_parted]
 
@@ -76,7 +76,6 @@ def _tile_data(source_data):
             part_data[key_parted] = value
 
     return target_data
-
 
 
 def pluralize(word):

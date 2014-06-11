@@ -14,14 +14,14 @@ class Request(object):
     def __init__(self, env):
         self.env = env
 
-        self.__path = '' # only path
-        self.__url = '' # path and query string
+        self.__path = ''  # only path
+        self.__url = ''  # path and query string
 
         self.__field_storage = None
         self.__params = dict()
 
         self.__run()
-        
+
     def __run(self):
         ''' process params in env '''
         # path
@@ -30,9 +30,9 @@ class Request(object):
         # url path
         self.__url = self.__path
         query = self.env.get('QUERY_STRING')
-        if not query is None and len(query) > 0 :
-            self.__url += '?'+ query
-        
+        if query is not None and len(query) > 0:
+            self.__url += '?' + query
+
         # field storage
         self.__field_storage = cgi.FieldStorage(
             fp=self.env['wsgi.input'],
@@ -49,8 +49,9 @@ class Request(object):
                         for v in value
                     ]
                 else:
-                    realvalue = value.value if value.filename is None else value
-                    self.__params[real_key] = [realvalue]
+                    self.__params[real_key] = [
+                        value.value if value.filename is None else value
+                    ]
             else:
                 if isinstance(value, list):
                     value = value[-1]
@@ -59,7 +60,7 @@ class Request(object):
                     self.__params[key] = value.value
                 else:
                     self.__params[key] = value
-        
+
     def __getattr__(self, key):
         return self.env.get(key, None)
 

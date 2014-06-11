@@ -27,15 +27,6 @@ SESSION_SECRET_KEY = 'drape_web_framework'
 
 TEMPLATE_DIR = 'template'
 
-MIDDLEWARES = [
-    'drape.middleware.run_controller',
-    'drape.middleware.httperror_processor',
-    'drape.middleware.add_extra_headers',
-    'drape.middleware.add_session',
-    'drape.middleware.add_cookie',
-    'drape.middleware.exception_traceback',
-]
-
 
 # 此处仅import app.config
 # app内部逻辑由app.config.__init__处理

@@ -4,6 +4,7 @@ from functools import wraps
 
 from . import response
 
+
 class HTTPError(Exception):
     ''' 所有http错误的基类 '''
     def __init__(self, http_code):

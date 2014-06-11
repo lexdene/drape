@@ -62,6 +62,8 @@ __render_func_map = {
     'jinja2': jinja2,
     'mako': mako
 }
+
+
 def render(path, variables):
     template = config.DEFAULT_TEMPLATOR
     render_func = __render_func_map[template]
