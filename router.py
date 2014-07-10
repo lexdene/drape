@@ -1,5 +1,7 @@
 ''' routes '''
 import re
+import itertools
+import operator
 
 from .util import pluralize
 from .request import GET, POST, DELETE, PUT
@@ -7,23 +9,10 @@ from .request import GET, POST, DELETE, PUT
 
 class RouterBase(object):
     def __init__(self):
-        import app.controller
-        self._module = app.controller
+        pass
 
-    def match(self, path, method):
-        return None
-
-    def _controller(self, controller_name, params):
-        controller = self._module
-        for name_part in controller_name.split('.'):
-            controller = getattr(controller, name_part, None)
-            if controller is None:
-                return None
-
-        def resource_controller(request):
-            return controller(request, **params)
-
-        return resource_controller
+    def routes(self):
+        raise NotImplementedError
 
 
 KEY_REGEXP_MAP = {
@@ -33,58 +22,46 @@ KEY_REGEXP_MAP = {
 
 
 class Resource(RouterBase):
-    def __init__(self, name, key=None, key_type='number'):
+    def __init__(self, name, key=None, key_type='number', members=None):
         super(Resource, self).__init__()
+
         self.__name = name
 
         if key is None:
-            key = '%s_id' % self.__name
-        self.__param = {
-            'key': key,
-            'key_type': key_type
-        }
-        self.__routes = list(self.__generate_routes())
+            self.__key = '%s_id' % self.__name
+        else:
+            self.__key = key
 
-    def match(self, path, method):
-        for path_reg, action_map in self.__routes:
-            match = path_reg.match(path)
+        self.__key_type = key_type
 
-            if match and method in action_map:
-                return self._controller(
-                    '%s.%s' % (
-                        self.__name,
-                        action_map[method],
-                    ),
-                    match.groupdict()
-                )
+        if members:
+            self.__members = members
+        else:
+            self.__members = []
 
-    def __generate_routes(self):
-        plural = pluralize(self.__name)
+    def routes(self):
+        plural_path = pluralize(self.__name)
 
-        plural_path = r'^/%s$' % plural
+        yield (plural_path, GET, self.__name + '.index')
+        yield (plural_path, POST, self.__name + '.create')
 
-        yield (
-            re.compile(plural_path),
-            {
-                GET: 'index',
-                POST: 'create',
-            }
-        )
-
-        singular_path = r'^/%s/(?P<%s>%s+)$' % (
+        singular_path = r'%s/(?P<%s>%s+)' % (
             self.__name,
-            self.__param['key'],
-            KEY_REGEXP_MAP[self.__param['key_type']]
+            self.__key,
+            KEY_REGEXP_MAP[self.__key_type]
         )
 
-        yield (
-            re.compile(singular_path),
-            {
-                GET: 'one',
-                PUT: 'update',
-                DELETE: 'delete'
-            }
-        )
+        yield (singular_path, GET, self.__name + '.show')
+        yield (singular_path, PUT, self.__name + '.update')
+        yield (singular_path, DELETE, self.__name + '.delete')
+
+        for member in self.__members:
+            for route in member.routes():
+                yield (
+                    singular_path + '/' + route[0],
+                    route[1],
+                    route[2]
+                )
 
 
 class Group(RouterBase):
@@ -93,51 +70,92 @@ class Group(RouterBase):
         self.__name = name
         self.__children = children
 
+    def routes(self):
         for child in self.__children:
-            child._module = getattr(self._module, self.__name, None)
-
-        self.__path_reg = re.compile(r'^/%s/(?P<sub>.*)$' % self.__name)
-
-    def match(self, path, method):
-        result = self.__path_reg.match(path)
-
-        if result:
-            subpath = '/' + result.group('sub')
-            for child in self.__children:
-                ctrl = child.match(
-                    subpath,
-                    method
+            for route in child.routes():
+                yield (
+                    self.__name + '/' + route[0],
+                    route[1],
+                    self.__name + '.' + route[2]
                 )
-                if ctrl:
-                    return ctrl
 
 
 class Url(RouterBase):
     def __init__(self, url, method, name):
         super(Url, self).__init__()
 
-        self.__url_reg = re.compile(url)
+        self.__url = url
         self.__method = method
         self.__name = name
 
-    def match(self, path, method):
-        if method == self.__method:
-            result = self.__url_reg.match(path)
-            if result:
-                return self._controller(
-                    self.__name,
-                    result.groupdict()
-                )
+    def routes(self):
+        yield (
+            self.__url,
+            self.__method,
+            self.__name
+        )
 
     @classmethod
-    def create(cls, method, name):
-        url = '^/' + name.replace('.', '/') + '$'
+    def create(cls, method, url, name=None):
+        if name is None:
+            name = url.replace('/', '.')
         return cls(url, method, name)
 
     @classmethod
-    def get(cls, name):
-        return cls.create(GET, name)
+    def get(cls, url, name=None):
+        return cls.create(GET, url, name)
 
     @classmethod
-    def post(cls, name):
-        return cls.create(POST, name)
+    def post(cls, url, name=None):
+        return cls.create(POST, url, name)
+
+
+_ROUTES = []
+_COMPILED_ROUTES = None
+
+
+def define_routes(*argv):
+    global _ROUTES
+
+    for arg in argv:
+        for route in arg.routes():
+            _ROUTES.append(route)
+
+
+def compile_routes():
+    global _COMPILED_ROUTES
+
+    if _COMPILED_ROUTES is None:
+        _COMPILED_ROUTES = [
+            (
+                re.compile('^/' + k + '$'),
+                dict(v[1:] for v in vv)
+            )
+            for k, vv in itertools.groupby(_ROUTES, operator.itemgetter(0))
+        ]
+
+
+def find_controller(module, path, method):
+    for route in _COMPILED_ROUTES:
+        match = route[0].match(path)
+        if match and method in route[1]:
+            controller_path = route[1][method]
+
+            return _controller(
+                module,
+                controller_path,
+                match.groupdict()
+            )
+
+
+def _controller(controller, controller_path, params):
+    for name_part in controller_path.split('.'):
+        controller = getattr(controller, name_part)
+
+    def resource_controller(request):
+        for key, value in params.items():
+            request.set_param(key, value)
+
+        return controller(request)
+
+    return resource_controller

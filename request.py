@@ -82,3 +82,6 @@ class Request(object):
     def params(self):
         ''' request params '''
         return self.__params
+
+    def set_param(self, key, value):
+        self.__params[key] = value

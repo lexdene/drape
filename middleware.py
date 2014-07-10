@@ -2,7 +2,7 @@
 import sys
 import traceback
 
-from . import config, response, http, cookie, session, version
+from . import config, response, http, cookie, session, version, router
 
 
 _ctrl = None
@@ -127,17 +127,16 @@ def add_extra_headers(func):
 
 def run_controller(_):
     ''' find controller by path and run '''
+    import app.routes
+    router.compile_routes()
+    import app.controller
+
     def process_request(request):
         ' find controller and run '
         path = request.path()
         method = request.method()
 
-        controller = None
-        import app.routes
-        for route in app.routes.ROUTES:
-            controller = route.match(path, method)
-            if controller:
-                break
+        controller = router.find_controller(app.controller, path, method)
 
         if not controller:
             raise http.NotFound(path)
