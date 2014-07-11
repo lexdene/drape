@@ -79,6 +79,8 @@ def _tile_data(source_data):
 
 
 def pluralize(word):
+    if re.search(r'y$', word):
+        return re.sub(r'y$', r'ies', word)
     return word + 's'
 
 
