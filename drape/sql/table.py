@@ -16,7 +16,7 @@ IndexTypes = Enum(
     module=__name__
 )
 
-class Column(object):
+class Column:
     def __init__(self, name, column_type,
                  type_desc=None, null=True,
                  auto_increment=False):
@@ -26,12 +26,12 @@ class Column(object):
         self.null = null
         self.auto_increment = auto_increment
 
-class Index(object):
+class Index:
     def __init__(self, name, index_type):
         self.name = name
         self.index_type = index_type
 
-class Table(object):
+class Table:
     def __init__(self):
         self.create_primary_id = True
         self.__columns = []
@@ -63,19 +63,21 @@ class Table(object):
     def charset(self):
         return 'utf8'
 
-    def __iter__(self):
-        if self.create_primary_id:
-            yield Column('id', ColumnTypes.INT, null=False, auto_increment=True)
-
-        for column in self.__columns:
-            yield column
+    def columns(self):
+        return self.__columns
 
     def indexes(self):
-        if self.create_primary_id:
-            yield Index('id', IndexTypes.PRIMARY)
+        return self.__indexes
 
-        for index in self.__indexes:
-            yield index
+    def integer(self, name, null=True, auto_increment=False):
+        self.__columns.append(
+            Column(
+                name=name,
+                column_type=ColumnTypes.INT,
+                null=null,
+                auto_increment=auto_increment
+            )
+        )
 
     def string(self, name, length=100, null=True):
         self.__columns.append(
@@ -96,6 +98,13 @@ class Table(object):
             )
         )
 
+    def add_index(self, *argv, **kwargs):
+        self.__indexes.append(Index(*argv, **kwargs))
+
+    def primary_id(self):
+        self.integer('id', null=False, auto_increment=True)
+        self.add_index('id', IndexTypes.PRIMARY)
+
     def meta_times(self):
         self.datetime('created_at', null=False)
         self.datetime('updated_at', null=False)
@@ -103,7 +112,7 @@ class Table(object):
 
 def create_table(db_obj, table, force=False):
     sql = (
-        'CREATE TABLE {force} {table_name}('
+        'CREATE TABLE {force} `{table_name}`('
         '{define}'
         ')ENGINE={engine} DEFAULT CHARSET={charset}'
     ).format(
@@ -122,7 +131,7 @@ def create_table(db_obj, table, force=False):
     db_obj.execute(sql)
 
 def _create_columns_sql(table):
-    for column in table:
+    for column in table.columns():
         yield '`{name}` {column_type}{type_desc} {null}{auto_increment}'.format(
             name=column.name,
             column_type=column.column_type.name,
