@@ -130,6 +130,15 @@ def create_table(db_obj, table, force=False):
 
     db_obj.execute(sql)
 
+
+def drop_table(db_obj, table):
+    sql = 'DROP TABLE `{table_name}`'.format(
+        table_name=table.table_name
+    )
+
+    db_obj.execute(sql)
+
+
 def _create_columns_sql(table):
     for column in table.columns():
         yield '`{name}` {column_type}{type_desc} {null}{auto_increment}'.format(

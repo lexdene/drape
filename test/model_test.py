@@ -15,10 +15,14 @@ def setUp(self):
 
     db_obj = db.Db(connect_args)
 
-    table.create_table(db_obj, UserInfo())
+    table.create_table(db_obj, UserInfo(), force=True)
+
+def tearDown(self):
+    table.drop_table(db_obj, UserInfo())
 
 class UserInfo(table.Table):
     def _define(self):
+        self.primary_id()
         self.string('username', null=False)
 
 class ModelTestCase(unittest.TestCase):
