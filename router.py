@@ -122,6 +122,10 @@ def define_routes(*argv):
             _ROUTES.append(route)
 
 
+def routes():
+    return _ROUTES
+
+
 def compile_routes():
     global _COMPILED_ROUTES
 
