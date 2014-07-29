@@ -85,3 +85,6 @@ class Request(object):
 
     def set_param(self, key, value):
         self.__params[key] = value
+
+    def chief_accept(self):
+        return self.HTTP_ACCEPT.split(',')[0]
