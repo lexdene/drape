@@ -44,6 +44,7 @@ class Resource(RouterBase):
 
         yield (plural_path, GET, self.__name + '.index')
         yield (plural_path, POST, self.__name + '.create')
+        yield (plural_path + '/new', GET, self.__name + '.new')
 
         singular_path = r'%s/(?P<%s>%s+)' % (
             self.__name,
