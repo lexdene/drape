@@ -540,13 +540,13 @@ class LinkedModel(object):
                     if isinstance(realvalue, FieldParam):
                         return '%s %s %s' % (
                             key,
-                            relation,
+                            operator,
                             realvalue.name
                         )
                     else:
                         return '%s %s %%(%s)s' % (
                             key,
-                            relation,
+                            operator,
                             self.__add_param(key, realvalue)
                         )
                 else:

@@ -35,6 +35,7 @@ def toInt(s, default=None):
             return int(s)
         else:
             return default
+    return default
 
 
 def isInt(v):
@@ -81,6 +82,8 @@ def _tile_data(source_data):
 def pluralize(word):
     if re.search(r'y$', word):
         return re.sub(r'y$', r'ies', word)
+    if re.search(r's$', word):
+        return word + 'es'
     return word + 's'
 
 
