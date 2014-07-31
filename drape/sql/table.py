@@ -32,6 +32,12 @@ class Index:
         self.index_type = index_type
 
 class Table:
+    _instance = None
+    def __new__(cls):
+        if not isinstance(cls._instance, cls):
+            cls._instance = object.__new__(cls)
+        return cls._instance
+
     def __init__(self):
         self.create_primary_id = True
         self.__columns = []
