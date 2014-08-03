@@ -26,9 +26,6 @@ class UserInfo(table.Table):
         self.string('username', null=False)
 
 class ModelTestCase(unittest.TestCase):
-    def setUp(self):
-        db_obj.execute('truncate table %s' % UserInfo().table_name)
-
     def testModel(self):
         user_builder = builder.LinkedBuilder(UserInfo(), db_obj)
         self.assertEqual(
