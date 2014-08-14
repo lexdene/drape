@@ -30,17 +30,19 @@ class HTTPError(Exception):
 
 class BadRequest(HTTPError):
     ''' 400 Bad Request '''
-    def __init__(self, param, msg):
+    def __init__(self, msg):
         super(BadRequest, self).__init__(400)
 
-        self.__param = param
         self.__msg = msg
 
     def body(self):
-        return '%s invalid: %s' % (
-            self.__param,
-            self.__msg
-        )
+        return self.__msg
+
+
+class Unauthorized(HTTPError):
+    ''' 401 Unauthorized '''
+    def __init__(self):
+        super(Unauthorized, self).__init__(401)
 
 
 class NotFound(HTTPError):

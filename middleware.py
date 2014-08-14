@@ -60,13 +60,20 @@ def httperror_processor(func):
         try:
             return func(request)
         except http.HTTPError as exception:
-            return response.Response(
-                status=exception.description,
-                headers={
-                    'Content-Type': 'text/plain; charset=utf-8'
-                },
-                body=exception.body()
-            )
+            accept = request.chief_accept()
+            if accept == 'application/json':
+                return response.json_response(
+                    obj=exception.body(),
+                    status=exception.description,
+                )
+            else:
+                return response.Response(
+                    status=exception.description,
+                    headers={
+                        'Content-Type': 'text/plain; charset=utf-8'
+                    },
+                    body=exception.body()
+                )
 
     return process_exception
 

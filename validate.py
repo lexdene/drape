@@ -2,6 +2,8 @@
 
 import re
 
+from . import http
+
 
 def validate_params(params, validators):
     validate_results = dict()
@@ -27,6 +29,12 @@ def validate_params(params, validators):
                 validate_results[key].append(validate)
 
     return validate_results
+
+
+def validate(params, validators):
+    result = validate_params(params, validators)
+    if result:
+        raise http.BadRequest(result)
 
 
 class _Field(object):
