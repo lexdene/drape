@@ -11,8 +11,9 @@ PUT = 'PUT'
 
 class Request(object):
     ''' request object '''
-    def __init__(self, env):
+    def __init__(self, env, app):
         self.env = env
+        self.app = app
 
         self.__path = ''  # only path
         self.__url = ''  # path and query string
@@ -79,6 +80,7 @@ class Request(object):
         ''' path and query string '''
         return self.__url
 
+    @property
     def params(self):
         ''' request params '''
         return self.__params

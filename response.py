@@ -34,7 +34,7 @@ def get_desc_by_code(status_code):
 
 class Response(object):
     ''' 响应对象 '''
-    def __init__(self, status=OK, headers=None, body=''):
+    def __init__(self, body='', status=OK, headers=None):
         self.__status = status
 
         self.__headers = dict()

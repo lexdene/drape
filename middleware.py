@@ -134,16 +134,14 @@ def add_extra_headers(func):
 
 def run_controller(_):
     ''' find controller by path and run '''
-    import app.routes
     router.compile_routes()
-    import app.controller
 
     def process_request(request):
         ' find controller and run '
         path = request.path()
         method = request.method()
 
-        controller = router.find_controller(app.controller, path, method)
+        controller = router.find_controller(path, method)
 
         if not controller:
             raise http.NotFound(path)

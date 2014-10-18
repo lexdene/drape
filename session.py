@@ -12,7 +12,7 @@ from . import util
 class StoreBase(object):
     ''' Base for store engine '''
     @classmethod
-    def create(cls, store_engine):
+    def create(cls, store_engine, app):
         ''' create a store obj '''
         store_class_map = {
             'file': FileStore,
@@ -22,12 +22,15 @@ class StoreBase(object):
         if store_cls is None:
             raise ValueError('no such store type:%s' % store_engine)
 
-        store = store_cls()
+        store = store_cls(app)
 
         # cleanup
         store.cleanup()
 
         return store
+
+    def __init__(self, app):
+        self._app = app
 
     def get(self, key, value=None):
         ''' get value from store '''
@@ -55,13 +58,19 @@ BUF_SIZE = 1024 * 24
 
 class FileStore(StoreBase):
     ''' store by file '''
+    def _directory(self):
+        return os.path.join(
+            self._app.root_dir,
+            config.SESSION_FILE_DIRECTORY
+        )
+
     def __contains__(self, key):
-        directory = config.SESSION_FILE_DIRECTORY
+        directory = self._directory()
         path = '%s/%s' % (directory, key)
         return os.path.isfile(path)
 
     def __getitem__(self, key):
-        directory = config.SESSION_FILE_DIRECTORY
+        directory = self._directory()
         path = '%s/%s' % (directory, key)
         if not os.path.isfile(path):
             return None
@@ -72,7 +81,7 @@ class FileStore(StoreBase):
         return content
 
     def __setitem__(self, key, value):
-        directory = config.SESSION_FILE_DIRECTORY
+        directory = self._directory()
         util.mkdir_not_existing(directory)
 
         path = '%s/%s' % (directory, key)
@@ -81,7 +90,7 @@ class FileStore(StoreBase):
             fout.write(value)
 
     def cleanup(self):
-        directory = config.SESSION_FILE_DIRECTORY
+        directory = self._directory()
         timeout = config.SESSION_TIMEOUT
         now = time.time()
 
@@ -151,7 +160,10 @@ class Session(object):
         cookie_name = config.SESSION_COOKIE_NAME
         request = self.__request
         cookie = request.cookie
-        self.__store = StoreBase.create(config.SESSION_STORE_ENGINE)
+        self.__store = StoreBase.create(
+            config.SESSION_STORE_ENGINE,
+            self.__request.app
+        )
 
         # read session id from cookie
         self.__session_id = cookie.get(cookie_name)

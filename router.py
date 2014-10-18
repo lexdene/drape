@@ -113,6 +113,7 @@ class Url(RouterBase):
 
 _ROUTES = []
 _COMPILED_ROUTES = None
+_CONTROLLERS = None
 
 
 def define_routes(*argv):
@@ -121,6 +122,11 @@ def define_routes(*argv):
     for arg in argv:
         for route in arg.routes():
             _ROUTES.append(route)
+
+
+def define_controller(module):
+    global _CONTROLLERS
+    _CONTROLLERS = module
 
 
 def routes():
@@ -140,14 +146,14 @@ def compile_routes():
         ]
 
 
-def find_controller(module, path, method):
+def find_controller(path, method):
     for route in _COMPILED_ROUTES:
         match = route[0].match(path)
         if match and method in route[1]:
             controller_path = route[1][method]
 
             return _controller(
-                module,
+                _CONTROLLERS,
                 controller_path,
                 match.groupdict()
             )

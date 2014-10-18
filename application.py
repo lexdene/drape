@@ -5,7 +5,8 @@ from . import request, middleware
 
 class Base(object):
     ''' base application '''
-    def __init__(self):
+    def __init__(self, root_dir):
+        self.root_dir = root_dir
         self.app_init()
 
     def app_init(self):
@@ -20,7 +21,7 @@ class Base(object):
 class WsgiApplication(Base):
     ''' application for wsgi '''
     def run(self, env):
-        request_obj = request.Request(env)
+        request_obj = request.Request(env, self)
 
         return middleware.run(request_obj)
 
