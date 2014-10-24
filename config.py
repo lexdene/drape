@@ -28,6 +28,20 @@ SESSION_SECRET_KEY = 'drape_web_framework'
 TEMPLATE_DIR = 'template'
 
 
-# 此处仅import app.config
-# app内部逻辑由app.config.__init__处理
-from app.config import *
+class ConfigWrapper:
+    def __init__(self):
+        self.__modules = []
+
+    def register(self, module):
+        self.__modules.append(module)
+
+    def __getattr__(self, key):
+        for module in self.__modules:
+            value = getattr(module, key, None)
+            if value is not None:
+                return value
+
+        return getattr(self.__class__.__module__, key)
+
+
+config = ConfigWrapper()

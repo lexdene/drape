@@ -29,7 +29,7 @@ def exception_traceback(func):
             return func(request)
         except Exception:
             body = ''
-            if config.SYSTEM_IS_DEBUG:
+            if config.config.SYSTEM_IS_DEBUG:
                 body += 'url: %s\n' % (
                     request.url(),
                 )
