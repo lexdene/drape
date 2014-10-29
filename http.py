@@ -2,7 +2,7 @@
 ''' http functions '''
 from functools import wraps
 
-from . import response, router
+from . import response, router, config
 
 
 class HTTPError(Exception):
@@ -53,12 +53,15 @@ class NotFound(HTTPError):
         self.__path = path
 
     def body(self):
-        return 'can not found: %s\n%s' % (
-            self.__path,
-            '\n'.join(
-                ('%7s: %s' % (r[1], r[0]) for r in router.routes())
+        if config.config.SYSTEM_IS_DEBUG:
+            return 'can not found: %s\n%s' % (
+                self.__path,
+                '\n'.join(
+                    ('%7s: %s' % (r[1], r[0]) for r in router.routes())
+                )
             )
-        )
+        else:
+            return 'can not found: %s' % self.__path
 
 
 class NotAllowed(HTTPError):
