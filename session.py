@@ -61,7 +61,7 @@ class FileStore(StoreBase):
     def _directory(self):
         return os.path.join(
             self._app.root_dir,
-            config.SESSION_FILE_DIRECTORY
+            config.config.SESSION_FILE_DIRECTORY
         )
 
     def __contains__(self, key):
@@ -91,7 +91,7 @@ class FileStore(StoreBase):
 
     def cleanup(self):
         directory = self._directory()
-        timeout = config.SESSION_TIMEOUT
+        timeout = config.config.SESSION_TIMEOUT
         now = time.time()
 
         if not os.path.isdir(directory):
@@ -157,11 +157,11 @@ class Session(object):
 
     def _run(self):
         ''' read data from store '''
-        cookie_name = config.SESSION_COOKIE_NAME
+        cookie_name = config.config.SESSION_COOKIE_NAME
         request = self.__request
         cookie = request.cookie
         self.__store = StoreBase.create(
-            config.SESSION_STORE_ENGINE,
+            config.config.SESSION_STORE_ENGINE,
             self.__request.app
         )
 
@@ -178,7 +178,7 @@ class Session(object):
             if rawdata is None:
                 self.__data = _init_session_data(
                     request.REMOTE_ADDR,
-                    config.SESSION_TIMEOUT
+                    config.config.SESSION_TIMEOUT
                 )
             else:
                 self.__data = _decode_data(rawdata)
@@ -189,25 +189,25 @@ class Session(object):
                     or time.time() > self.get('_expired'):
                 self.__data = _init_session_data(
                     request.REMOTE_ADDR,
-                    config.SESSION_TIMEOUT
+                    config.config.SESSION_TIMEOUT
                 )
 
         # recreate session_id
         if self.__session_id is None:
             self.__session_id = _recreate_session_id(
                 request.REMOTE_ADDR,
-                config.SESSION_SECRET_KEY,
+                config.config.SESSION_SECRET_KEY,
                 self.__store
             )
             cookie.add(cookie_name, self.__session_id)
             self.__data = _init_session_data(
                 request.REMOTE_ADDR,
-                config.SESSION_TIMEOUT
+                config.config.SESSION_TIMEOUT
             )
 
     def set_cookie_attr(self, path='/', expired=None, domain=None):
         ''' set attr of the cookie for session '''
-        cookie_name = config.SESSION_COOKIE_NAME
+        cookie_name = config.config.SESSION_COOKIE_NAME
         cookie = self.__request.cookie
         cookie.add(cookie_name, self.__session_id, path, expired, domain)
 
