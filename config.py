@@ -7,7 +7,7 @@ class ConfigWrapper:
         self.__modules = []
 
     def register(self, module):
-        self.__modules.append(module)
+        self.__modules.insert(0, module)
 
     def __getattr__(self, key):
         for module in self.__modules:
