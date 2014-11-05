@@ -16,8 +16,3 @@ class ConfigWrapper:
                 return value
 
         return object.__getattribute__(self, key)
-
-
-config = ConfigWrapper()
-from . import _default_configs
-config.register(_default_configs)
