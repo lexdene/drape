@@ -18,7 +18,7 @@ DEFAULT_TEMPLATOR = 'jinja2'
 SESSION_STORE_ENGINE = 'file'
 SESSION_FILE_DIRECTORY = 'data/session'
 SESSION_COOKIE_NAME = 'drape_session_id'
-SESSION_TIMEOUT = 10 * 24 * 3600
+SESSION_TIMEOUT = 10 * 24 * 3600  # as second
 SESSION_SECRET_KEY = 'drape_web_framework'
 
 TEMPLATE_DIR = 'template'
