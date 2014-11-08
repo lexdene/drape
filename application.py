@@ -1,6 +1,7 @@
 ''' application '''
 
-from . import request, middleware
+
+instance = None
 
 
 class Base(object):
@@ -8,6 +9,9 @@ class Base(object):
     def __init__(self, root_dir):
         self.root_dir = root_dir
         self.app_init()
+
+        global instance
+        instance = self
 
     def app_init(self):
         ''' run for one time '''
@@ -21,6 +25,8 @@ class Base(object):
 class WsgiApplication(Base):
     ''' application for wsgi '''
     def run(self, env):
+        from . import request, middleware
+
         request_obj = request.Request(env, self)
 
         return middleware.run(request_obj)

@@ -1,4 +1,5 @@
 ''' module for debug '''
+import os
 import logging
 import datetime
 
@@ -10,7 +11,11 @@ _logger = None
 def get_logger():
     global _logger
     if _logger is None:
-        dirpath = 'data/log'
+        from . import application
+        dirpath = os.path.join(
+            application.instance.root_dir,
+            'data/log'
+        )
         util.mkdir_not_existing(dirpath)
 
         now = datetime.datetime.now()

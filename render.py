@@ -1,4 +1,6 @@
-from . import config
+import os
+
+from . import config, application
 
 _jinja2_env = None
 
@@ -8,11 +10,22 @@ def jinja2(templatePath, vardict):
     if _jinja2_env is None:
         import jinja2
         from . import util
-        util.mkdir_not_existing('data/jinja_cache')
+
+        cache_dir = os.path.join(
+            application.instance.root_dir,
+            'data/jinja_cache'
+        )
+        template_dir = os.path.join(
+            application.instance.root_dir,
+            config.TEMPLATE_DIR
+        )
+
+        util.mkdir_not_existing(cache_dir)
+
         _jinja2_env = jinja2.Environment(
-            loader=jinja2.FileSystemLoader(config.TEMPLATE_DIR),
+            loader=jinja2.FileSystemLoader(template_dir),
             extensions=['jinja2.ext.do'],
-            bytecode_cache=jinja2.FileSystemBytecodeCache('data/jinja_cache')
+            bytecode_cache=jinja2.FileSystemBytecodeCache(cache_dir)
         )
 
     template_filepath = '%s.html' % templatePath

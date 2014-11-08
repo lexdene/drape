@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 ''' 响应相关模块 '''
 
-from .render import json
-
 # response codes
 OK = '200 OK'
 REDIRECT = '301 Moved Permanently'
@@ -89,6 +87,8 @@ class Response(object):
 
 
 def json_response(obj, headers=None, status=OK):
+    from .render import json
+
     if headers is None:
         headers = {}
     headers[CONTENT_TYPE] = 'application/json; charset=utf-8'
