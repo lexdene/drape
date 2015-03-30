@@ -3,7 +3,7 @@ import os
 import logging
 import datetime
 
-from . import util
+from . import util, config
 
 _logger = None
 
@@ -11,12 +11,7 @@ _logger = None
 def get_logger():
     global _logger
     if _logger is None:
-        from . import application
-        dirpath = os.path.join(
-            application.instance.root_dir,
-            'data/log'
-        )
-        util.mkdir_not_existing(dirpath)
+        util.mkdir_not_existing(config.LOGFILE_DIR)
 
         now = datetime.datetime.now()
         filepath = dirpath + '/%s.log' % (

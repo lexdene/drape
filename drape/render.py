@@ -11,14 +11,8 @@ def jinja2(templatePath, vardict):
         import jinja2
         from . import util
 
-        cache_dir = os.path.join(
-            application.instance.root_dir,
-            'data/jinja_cache'
-        )
-        template_dir = os.path.join(
-            application.instance.root_dir,
-            config.TEMPLATE_DIR
-        )
+        cache_dir = config.JINJA_CACHE_DIR
+        template_dir = config.JINJA_TEMPLATE_DIR
 
         util.mkdir_not_existing(cache_dir)
 

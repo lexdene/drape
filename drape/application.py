@@ -6,8 +6,7 @@ instance = None
 
 class Base(object):
     ''' base application '''
-    def __init__(self, root_dir):
-        self.root_dir = root_dir
+    def __init__(self):
         self.app_init()
 
         global instance

@@ -49,12 +49,7 @@ class FileStore(StoreBase):
         self._cleanup()
 
     def _directory(self):
-        from . import application
-
-        return os.path.join(
-            application.instance.root_dir,
-            config.SESSION_FILE_DIRECTORY
-        )
+        config.SESSION_FILE_DIRECTORY
 
     def __contains__(self, key):
         directory = self._directory()
